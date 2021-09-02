@@ -85,3 +85,10 @@ DATABASES = {
         "PORT": "49155",
     }
 }
+
+
+in installed_apps add:
+
+    # Additional installed apps
+    'django.contrib.gis',
+    "djangostreetmap",
