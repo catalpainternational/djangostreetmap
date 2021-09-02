@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.gis.db.models import GeometryField
 
 
 class PlanetOsmLine(models.Model):
@@ -49,7 +50,7 @@ class PlanetOsmLine(models.Model):
     waterway = models.TextField(blank=True, null=True)
     way_area = models.FloatField(blank=True, null=True)
     z_order = models.IntegerField(blank=True, null=True)
-    way = models.GeometryField(blank=True, null=True)
+    way = GeometryField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -90,7 +91,7 @@ class PlanetOsmPoint(models.Model):
     tourism = models.TextField(blank=True, null=True)
     water = models.TextField(blank=True, null=True)
     waterway = models.TextField(blank=True, null=True)
-    way = models.GeometryField(blank=True, null=True)
+    way = GeometryField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -145,7 +146,7 @@ class PlanetOsmPolygon(models.Model):
     waterway = models.TextField(blank=True, null=True)
     way_area = models.FloatField(blank=True, null=True)
     z_order = models.IntegerField(blank=True, null=True)
-    way = models.GeometryField(blank=True, null=True)
+    way = GeometryField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -200,7 +201,7 @@ class PlanetOsmRoads(models.Model):
     waterway = models.TextField(blank=True, null=True)
     way_area = models.FloatField(blank=True, null=True)
     z_order = models.IntegerField(blank=True, null=True)
-    way = models.GeometryField(blank=True, null=True)
+    way = GeometryField(blank=True, null=True)
 
     class Meta:
         managed = False
