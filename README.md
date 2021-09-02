@@ -41,6 +41,15 @@ osm2pgsql \
 
 psql --host localhost --username postgres --port 49155
 
+# Add ID's to the planet tables
+
+psql --host localhost --username postgres --port 49155
+
+ALTER TABLE Planet_Osm_Line ADD COLUMN unique_id SERIAL PRIMARY KEY;
+ALTER TABLE Planet_Osm_Point ADD COLUMN unique_id SERIAL PRIMARY KEY;
+ALTER TABLE Planet_Osm_Polygon ADD COLUMN unique_id SERIAL PRIMARY KEY;
+ALTER TABLE Planet_Osm_Roads ADD COLUMN unique_id SERIAL PRIMARY KEY;
+
 ## Qgis
 
  - Add a new Postgres Connection with the following settings:
@@ -52,3 +61,27 @@ psql --host localhost --username postgres --port 49155
 
  Authentication: Basic
  postgres / osm
+
+# Add to a Project
+
+start a new Django project
+
+django-admin startproject osmfun
+cd osmfun
+git init .
+git submodule add /home/josh/github/joshbrooks/djangostreetmap djangostreetmap
+
+Set the settings of new project to match the above
+
+in osmfun/settings.py:
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": "postgres",
+        "USER": "postgres",
+        "PASSWORD": "osm",
+        "HOST": "localhost",
+        "PORT": "49155",
+    }
+}
