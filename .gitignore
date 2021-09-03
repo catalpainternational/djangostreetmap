@@ -1,2 +1,3 @@
 *.osm.pbf
 __pycache__/
+env/
