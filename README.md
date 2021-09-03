@@ -1,3 +1,5 @@
+This is a Django application to expose OpenStreetMap data
+
 # Set up postgis
 
 docker run --name=osm -e POSTGRES_PASSWORD=osm -P postgis/postgis:12-3.1
@@ -8,15 +10,10 @@ docker run --name=osm -e POSTGRES_PASSWORD=osm -P postgis/postgis:12-3.1
 (env) josh@m4800:~/github/joshbrooks/djangostreetmap$ docker ps
 CONTAINER ID   IMAGE                            COMMAND                  CREATED          STATUS             PORTS                                         NAMES
 c619232fe38a   postgis/postgis:12-3.1           "docker-entrypoint.s…"   33 seconds ago   Up 32 seconds      0.0.0.0:49155->5432/tcp, :::49155->5432/tcp   osm
-5776ce2a96da   ghcr.io/joshbrooks/openly_dird   "docker-entrypoint.s…"   3 weeks ago      Up 55 minutes      0.0.0.0:32774->5432/tcp, :::32774->5432/tcp   dird_test
-812effd185b7   5e41922cc434                     "docker-entrypoint.s…"   4 weeks ago      Up About an hour   0.0.0.0:49153->5432/tcp, :::49153->5432/tcp   databases_plov_1
-0593905bce24   5e41922cc434                     "docker-entrypoint.s…"   4 weeks ago      Up About an hour   0.0.0.0:32771->5432/tcp, :::32771->5432/tcp   databases_dird_1
-90115c00149f   5e41922cc434                     "docker-entrypoint.s…"   4 weeks ago      Up About an hour   0.0.0.0:32769->5432/tcp, :::32769->5432/tcp   databases_mohinga_1
-a46207132739   5e41922cc434                     "docker-entrypoint.s…"   4 weeks ago      Up About an hour   0.0.0.0:32776->5432/tcp, :::32776->5432/tcp   databases_mohinga_beta_1
-7d02e926d173   5e41922cc434                     "docker-entrypoint.s…"   4 weeks ago      Up About an hour   0.0.0.0:32770->5432/tcp, :::32770->5432/tcp   databases_dird_production_1
+...
 ```
 
-OSM is on 49155
+OSM is on port 49155
 
 # Fetch your data
 
@@ -27,15 +24,15 @@ wget https://raw.githubusercontent.com/gravitystorm/openstreetmap-carto/master/o
 # Load your data
 
 osm2pgsql \
-    --username postgres\
-    --database postgres\
-    --password\
-    --host localhost\
-    --port 49155\
-    --style openstreetmap-carto.style\
-    --proj 4326\
-    --create\
-    papua-new-guinea-latest.osm.pbf
+ --username postgres\
+ --database postgres\
+ --password\
+ --host localhost\
+ --port 49155\
+ --style openstreetmap-carto.style\
+ --proj 4326\
+ --create\
+ papua-new-guinea-latest.osm.pbf
 
 # Exploring data
 
@@ -45,22 +42,30 @@ psql --host localhost --username postgres --port 49155
 
 psql --host localhost --username postgres --port 49155
 
+```sql
 ALTER TABLE Planet_Osm_Line ADD COLUMN unique_id SERIAL PRIMARY KEY;
 ALTER TABLE Planet_Osm_Point ADD COLUMN unique_id SERIAL PRIMARY KEY;
 ALTER TABLE Planet_Osm_Polygon ADD COLUMN unique_id SERIAL PRIMARY KEY;
-ALTER TABLE Planet_Osm_Roads ADD COLUMN unique_id SERIAL PRIMARY KEY;
+```
+
+... and drop the useless roads table
+it's duplicated in lines anyway and seems to miss a of road instances
+
+```sql
+DROP TABLE Planet_Osm_Roads;
+```
 
 ## Qgis
 
- - Add a new Postgres Connection with the following settings:
+-   Add a new Postgres Connection with the following settings:
 
- Name: Papua New Guinea Roads
- Host: localhost
- Port: 49155
- Database: postgres
+Name: Papua New Guinea Roads
+Host: localhost
+Port: 49155
+Database: postgres
 
- Authentication: Basic
- postgres / osm
+Authentication: Basic
+postgres / osm
 
 # Add to a Project
 
@@ -75,20 +80,24 @@ Set the settings of new project to match the above
 
 in osmfun/settings.py:
 
+```python
 DATABASES = {
-    "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": "postgres",
-        "USER": "postgres",
-        "PASSWORD": "osm",
-        "HOST": "localhost",
-        "PORT": "49155",
+"default": {
+    "ENGINE": "django.contrib.gis.db.backends.postgis",
+    "NAME": "postgres",
+    "USER": "postgres",
+    "PASSWORD": "osm",
+    "HOST": "localhost",
+    "PORT": "49155",
     }
 }
+```
 
+Extend installed_apps with the following apps:
 
-in installed_apps add:
-
-    # Additional installed apps
+```python
+[
     'django.contrib.gis',
     "djangostreetmap",
+]
+```
