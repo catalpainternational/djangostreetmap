@@ -1,3 +1,5 @@
+This is a Django application to expose OpenStreetMap data
+
 # Set up postgis
 
 docker run --name=osm -e POSTGRES_PASSWORD=osm -P postgis/postgis:12-3.1
@@ -27,15 +29,15 @@ wget https://raw.githubusercontent.com/gravitystorm/openstreetmap-carto/master/o
 # Load your data
 
 osm2pgsql \
-    --username postgres\
-    --database postgres\
-    --password\
-    --host localhost\
-    --port 49155\
-    --style openstreetmap-carto.style\
-    --proj 4326\
-    --create\
-    papua-new-guinea-latest.osm.pbf
+ --username postgres\
+ --database postgres\
+ --password\
+ --host localhost\
+ --port 49155\
+ --style openstreetmap-carto.style\
+ --proj 4326\
+ --create\
+ papua-new-guinea-latest.osm.pbf
 
 # Exploring data
 
@@ -43,24 +45,27 @@ psql --host localhost --username postgres --port 49155
 
 # Add ID's to the planet tables
 
+... and drop the useless roads table
+it's duplicated in lines anyway and seems to miss a of road instances
+
 psql --host localhost --username postgres --port 49155
 
 ALTER TABLE Planet_Osm_Line ADD COLUMN unique_id SERIAL PRIMARY KEY;
 ALTER TABLE Planet_Osm_Point ADD COLUMN unique_id SERIAL PRIMARY KEY;
 ALTER TABLE Planet_Osm_Polygon ADD COLUMN unique_id SERIAL PRIMARY KEY;
-ALTER TABLE Planet_Osm_Roads ADD COLUMN unique_id SERIAL PRIMARY KEY;
+DROP TABLE Planet_Osm_Roads;
 
 ## Qgis
 
- - Add a new Postgres Connection with the following settings:
+-   Add a new Postgres Connection with the following settings:
 
- Name: Papua New Guinea Roads
- Host: localhost
- Port: 49155
- Database: postgres
+Name: Papua New Guinea Roads
+Host: localhost
+Port: 49155
+Database: postgres
 
- Authentication: Basic
- postgres / osm
+Authentication: Basic
+postgres / osm
 
 # Add to a Project
 
@@ -76,16 +81,15 @@ Set the settings of new project to match the above
 in osmfun/settings.py:
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": "postgres",
-        "USER": "postgres",
-        "PASSWORD": "osm",
-        "HOST": "localhost",
-        "PORT": "49155",
-    }
+"default": {
+"ENGINE": "django.contrib.gis.db.backends.postgis",
+"NAME": "postgres",
+"USER": "postgres",
+"PASSWORD": "osm",
+"HOST": "localhost",
+"PORT": "49155",
 }
-
+}
 
 in installed_apps add:
 

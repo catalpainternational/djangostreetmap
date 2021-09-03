@@ -1,0 +1,15 @@
+{
+    "printWidth": 140,
+    "tabWidth": 4,
+    "useTabs": false,
+    "bracketSpacing": false,
+    "trailingComma": "none",
+    "overrides": [
+        {
+            "files": "*.riot",
+            "options": {
+                "parser": "html"
+            }
+        }
+    ]
+}

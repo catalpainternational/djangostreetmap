@@ -1,0 +1,21 @@
+[tool.isort]
+profile = 'black'
+skip = ['env','env3.8','openly','simple_locations', 'typings']
+
+[tool.black]
+line-length = 180
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+  | \.git
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | \env
+  | \env3.8
+  | migrations
+  | openly
+  | simple_locations
+)/
+'''
