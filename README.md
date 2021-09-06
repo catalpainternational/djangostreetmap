@@ -1,6 +1,5 @@
 # Openstreetmap Vector Tiles
 
-
 > "A vector tile is a lightweight data format for storing geospatial vector data"
 
 For an introduction to MVT (Mapbox Vector Tiles) see the [mapbox docs](https://docs.mapbox.com/help/glossary/vector-tiles/)
@@ -9,9 +8,9 @@ For an introduction to OSM see [openstreetmap.org](https://www.openstreetmap.org
 ## Purpose of this project
 
 This is a Django application to
- 1) Import OSM data as Django models
- 2) Expose Django models as MVT (Mapbox Vector Tile) geographic format data
 
+1.  Import OSM data as Django models
+2.  Expose Django models as MVT (Mapbox Vector Tile) geographic format data
 
 Tile generation is much faster when geometry is in srid=3857 (or maybe with an index in that SRID?)
 
@@ -22,6 +21,7 @@ In your existing Django project, add this repo as a submodule:
 ```sh
 git submodule add /home/josh/github/joshbrooks/djangostreetmap djangostreetmap
 ```
+
 Set the settings of new project to match the above
 
 Extend installed_apps with the following apps:
@@ -44,12 +44,10 @@ This assumes you're running memcached (Linux: `apt install memcached`) and insta
 
 Runserver is "ok" but this recipe will give faster performance for demonstration purposes
 
-
 ```
 pip install gunicorn
 gunicorn -w 8 osmfun.wsgi:application
 ```
-
 
 ```python
 CACHES = {
@@ -95,7 +93,6 @@ Append the URL to your urls.py as follows. Note the zoom, x and y are mandatory.
 ### Set up postgis
 
 docker run --name=osm -e POSTGRES_PASSWORD=osm -P postgis/postgis:12-3.1
-
 
 Find your port:
 
@@ -166,6 +163,7 @@ class Handler(osmium.SimpleHandler):
 
 Handler().apply_file(path_to_file, locations=True)
 ```
+
 You can then apply this in a Command like this:
 
 ```
