@@ -13,6 +13,8 @@ This is a Django application to
  2) Expose Django models as MVT (Mapbox Vector Tile) geographic format data
 
 
+Tile generation is much faster when geometry is in srid=3857 (or maybe with an index in that SRID?)
+
 # Adding to a Project
 
 In your existing Django project, add this repo as a submodule:
@@ -29,6 +31,45 @@ Extend installed_apps with the following apps:
     "django.contrib.gis",
     "djangostreetmap",
 ]
+```
+
+## (Recommended) Set your cache
+
+You likely want to set a fast cache for your tiles like Memcached
+by adding an entry for `mvt_tile_cache` to your backend. If this is not found
+the default cache will be used; this can be a bit slower and is very much non persistent
+This assumes you're running memcached (Linux: `apt install memcached`) and installed memcached(`pip install python-memcached`)
+
+## Running faster in testing
+
+Runserver is "ok" but this recipe will give faster performance for demonstration purposes
+
+
+```
+pip install gunicorn
+gunicorn -w 8 osmfun.wsgi:application
+```
+
+
+```python
+CACHES = {
+    'mvt_tile_cache': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+    }
+}
+```
+
+While developing though, to see your changes you'll likely want to disable the tile caching. The default cache setting
+should suffice
+
+```python
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
 ```
 
 # Writing Views
@@ -48,7 +89,6 @@ Append the URL to your urls.py as follows. Note the zoom, x and y are mandatory.
 ```python
     path("highways/<int:zoom>/<int:x>/<int:y>.pbf", RoadLayerView.as_view()),
 ```
-
 
 ## Running in Development
 
