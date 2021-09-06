@@ -1,10 +1,26 @@
-This is a Django application to expose OpenStreetMap data
+# Openstreetmap Vector Tiles
 
-# Set up postgis
+
+> "A vector tile is a lightweight data format for storing geospatial vector data"
+
+For an introduction to MVT (Mapbox Vector Tiles) see the [mapbox docs](https://docs.mapbox.com/help/glossary/vector-tiles/)
+For an introduction to OSM see [openstreetmap.org](https://www.openstreetmap.org/)
+
+## Purpose of this project
+
+This is a Django application to
+ 1) Import OSM data as Django models
+ 2) Expose Django models as MVT (Mapbox Vector Tile) geographic format data
+
+
+## Running in Development
+
+### Set up postgis
 
 docker run --name=osm -e POSTGRES_PASSWORD=osm -P postgis/postgis:12-3.1
 
-# Find your port
+
+Find your port:
 
 ```
 (env) josh@m4800:~/github/joshbrooks/djangostreetmap$ docker ps
@@ -15,13 +31,15 @@ c619232fe38a   postgis/postgis:12-3.1           "docker-entrypoint.s…"   33 se
 
 OSM is on port 49155
 
-# Fetch your data
+### Fetch your data
 
 wget https://download.geofabrik.de/australia-oceania/papua-new-guinea-latest.osm.pbf
 
 wget https://raw.githubusercontent.com/gravitystorm/openstreetmap-carto/master/openstreetmap-carto.style
 
-# Load your data
+### Load your data (1 - osm2pgsql)
+
+This will populate the "auto" fields
 
 osm2pgsql \
  --username postgres\
@@ -33,6 +51,43 @@ osm2pgsql \
  --proj 4326\
  --create\
  papua-new-guinea-latest.osm.pbf
+
+### Load your data (Method 2 - Using osmium)
+
+A simple handler for osmium might look like this:
+
+```
+class Handler(osmium.SimpleHandler):
+    def __init__(self):
+        super().__init__()
+        self.factory = osmium.geom.WKBFactory()
+        self.queryset = my_model.objects.all()  # type: QuerySet
+
+    def area(self, area):
+        if area.tags.get("place") == "island":
+            self.areas.filter(id=area.id).delete()
+            self.areas.create(
+                id=area.id,
+                geom=GEOSGeometry(self.factory.create_multipolygon(area)),
+                name=area.tags.get("name", None),
+            )
+
+Handler().apply_file(path_to_file, locations=True)
+```
+You can then apply this in a Command like this:
+
+```
+class Command(BaseCommand):
+    help = "Import roads from an OSM pbf file"
+
+    def add_arguments(self, parser):
+        parser.add_argument("osmfile", type=str, help="Path to the OSM file with the data to import")
+
+    def handle(self, *args, **options):
+        # HighwayHandler().apply_file(options["osmfile"], locations=True)
+        # OsmAdminBoundaryHandler().apply_file(options["osmfile"], locations=True)
+        OsmIslandsBoundaryHandler().apply_file(options["osmfile"], locations=True)
+```
 
 # Exploring data
 
