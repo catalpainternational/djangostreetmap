@@ -101,3 +101,9 @@ Extend installed_apps with the following apps:
     "djangostreetmap",
 ]
 ```
+
+# Development
+
+Code is blacked, flaked, isorted and mypy'd.
+
+`pip install pre-commit`
