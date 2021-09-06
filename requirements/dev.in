@@ -1,0 +1,5 @@
+-c base.txt
+black
+mypy
+isort
+pre-commit
