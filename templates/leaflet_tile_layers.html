@@ -1,0 +1,74 @@
+<html>
+    <head>
+        <link
+            rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+            integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+            crossorigin=""
+        />
+        <script
+            src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+            integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+            crossorigin=""
+        ></script>
+        <script type="text/javascript" src="https://unpkg.com/leaflet.vectorgrid@1.2.0"></script>
+    </head>
+    <body>
+        <div id="mapid" style="width: 600px; height: 400px"></div>
+        <script>
+            var mymap = L.map("mapid").setView([-8, 148], 5);
+            const opts = {
+                interactive: true,
+                vectorTileLayerStyles: {
+                    primary: {
+                        weight: 2,
+                        color: "red"
+                    },
+                    secondary: {
+                        weight: 1,
+                        color: "orange"
+                    },
+                    tertiary: {
+                        weight: 1,
+                        color: "gray"
+                    },
+                    admin_boundary: {
+                        weight: 2,
+                        color: "blue"
+                    },
+                    islands: {
+                        weight: 1,
+                        color: "blue",
+                        fillColor: "#9bc2c4",
+                        fillOpacity: 1,
+                        fill: true
+                    }
+                }
+            };
+
+            const islands = L.vectorGrid.protobuf("/islands/{z}/{x}/{y}.pbf", opts).addTo(mymap);
+
+            const adm = L.vectorGrid
+                .protobuf("/admboundary/{z}/{x}/{y}.pbf", opts)
+                .on("click", function (e) {
+                    L.popup()
+                        .setContent(e.layer.properties.name || e.layer.properties.type)
+                        .setLatLng(e.latlng)
+                        .openOn(mymap);
+                    L.DomEvent.stop(e);
+                })
+                .addTo(mymap);
+
+            const highways = L.vectorGrid
+                .protobuf("/highways/{z}/{x}/{y}.pbf", opts)
+                .on("click", function (e) {
+                    L.popup()
+                        .setContent(e.layer.properties.name || e.layer.properties.type)
+                        .setLatLng(e.latlng)
+                        .openOn(mymap);
+                    L.DomEvent.stop(e);
+                })
+                .addTo(mymap);
+        </script>
+    </body>
+</html>

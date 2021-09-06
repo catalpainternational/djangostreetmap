@@ -5,9 +5,14 @@ from django.core.cache import cache
 from django.db import connection
 from django.http.response import HttpResponse
 from django.views import View
+from django.views.generic.base import TemplateView
 
 from .models import OsmAdminBoundary, OsmHighway, OsmIslands, OsmIslandsAreas
 from .tilegenerator import MvtQuery, Tile
+
+
+class ExampleMapView(TemplateView):
+    template_name = "leaflet_tile_layers.html"
 
 
 class TileLayerView(View):
