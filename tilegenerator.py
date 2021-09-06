@@ -1,7 +1,16 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 PgFunction = str
+
+
+class OutOfZoomRangeException(Exception):
+    """
+    Raised when a renderer layer receives
+    a tile outside of its zoom range settings
+    """
+
+    pass
 
 
 @dataclass
@@ -43,10 +52,12 @@ class MvtQuery:
     table: str
     attributes: List[str] = field(default_factory=list)
     filters: List[str] = field(default_factory=list)
-    srid: int = 3857
+    transform: bool = False  # Set to True if source srid is not 3857, but beware performanc
     field: str = "geom"
     pk: str = "id"
     layer: str = "default"
+    min_render_zoom: Optional[int] = None
+    max_render_zoom: Optional[int] = None
 
     @property
     def json_attributes(self) -> PgFunction:
@@ -66,7 +77,9 @@ class MvtQuery:
         Return an `ST_TRANSFORM` clause
         https://postgis.net/docs/ST_Transform.html
         """
-        return f"ST_TRANSFORM({self.field}, {self.srid})"
+        if self.transform:
+            return f"ST_TRANSFORM({self.field}, 3857)"
+        return self.field
 
     @property
     def alias(self):
@@ -92,4 +105,8 @@ class MvtQuery:
         """
 
     def as_mvt(self, tile: Tile) -> PgFunction:
+        if self.min_render_zoom and tile.zoom < self.min_render_zoom:
+            raise OutOfZoomRangeException
+        if self.max_render_zoom and tile.zoom > self.max_render_zoom:
+            raise OutOfZoomRangeException
         return f"WITH {self.alias} AS (SELECT {self.as_mvtgeom(tile)}) SELECT ST_AsMVT({self.alias}.*, '{self.layer}', {tile.extent}, 'geom', '{self.pk}') FROM {self.alias}"
