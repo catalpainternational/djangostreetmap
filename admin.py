@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import PlanetOsmLine, PlanetOsmPoint, PlanetOsmPolygon, PlanetOsmRoads
+from .models import OsmHighway, PlanetOsmLine, PlanetOsmPoint, PlanetOsmPolygon
 
 # Register your models here.
 
@@ -20,6 +20,6 @@ class PlanetOsmPolygonAdmin(admin.ModelAdmin):
     list_display = ["name", "place"]
 
 
-@admin.register(PlanetOsmRoads)
-class PlanetOsmRoadsAdmin(admin.ModelAdmin):
-    list_display = ["name", "boundary", "highway", "waterway"]
+@admin.register(OsmHighway)
+class OsmHighwayAdmin(admin.ModelAdmin):
+    list_display = ["name", "highway"]
