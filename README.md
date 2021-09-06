@@ -13,6 +13,43 @@ This is a Django application to
  2) Expose Django models as MVT (Mapbox Vector Tile) geographic format data
 
 
+# Adding to a Project
+
+In your existing Django project, add this repo as a submodule:
+
+```sh
+git submodule add /home/josh/github/joshbrooks/djangostreetmap djangostreetmap
+```
+Set the settings of new project to match the above
+
+Extend installed_apps with the following apps:
+
+```python
+[
+    "django.contrib.gis",
+    "djangostreetmap",
+]
+```
+
+# Writing Views
+
+To set up a new View, create a subclass of TileLayerView with some `MvtQuery` instances as layers:
+
+```python
+class RoadLayerView(TileLayerView):
+    layers = [
+        MvtQuery(table=OsmHighway._meta.db_table, attributes=["name"], filters=[f"\"highway\"='{road_class}'"], layer=road_class)
+        for road_class in ("primary", "secondary", "tertiary")
+    ]
+```
+
+Append the URL to your urls.py as follows. Note the zoom, x and y are mandatory.
+
+```python
+    path("highways/<int:zoom>/<int:x>/<int:y>.pbf", RoadLayerView.as_view()),
+```
+
+
 ## Running in Development
 
 ### Set up postgis
@@ -30,6 +67,21 @@ c619232fe38a   postgis/postgis:12-3.1           "docker-entrypoint.s…"   33 se
 ```
 
 OSM is on port 49155
+
+To apply this to your project:
+
+```python
+DATABASES = {
+"default": {
+    "ENGINE": "django.contrib.gis.db.backends.postgis",
+    "NAME": "postgres",
+    "USER": "postgres",
+    "PASSWORD": "osm",
+    "HOST": "localhost",
+    "PORT": "49155",
+    }
+}
+```
 
 ### Fetch your data
 
@@ -89,11 +141,11 @@ class Command(BaseCommand):
         OsmIslandsBoundaryHandler().apply_file(options["osmfile"], locations=True)
 ```
 
-# Exploring data
+### Exploring data
 
 psql --host localhost --username postgres --port 49155
 
-# Add ID's to the planet tables
+### Add ID's to the planet tables
 
 psql --host localhost --username postgres --port 49155
 
@@ -110,7 +162,7 @@ it's duplicated in lines anyway and seems to miss a of road instances
 DROP TABLE Planet_Osm_Roads;
 ```
 
-## Qgis
+### Qgis
 
 -   Add a new Postgres Connection with the following settings:
 
@@ -121,41 +173,6 @@ Database: postgres
 
 Authentication: Basic
 postgres / osm
-
-# Add to a Project
-
-start a new Django project
-
-django-admin startproject osmfun
-cd osmfun
-git init .
-git submodule add /home/josh/github/joshbrooks/djangostreetmap djangostreetmap
-
-Set the settings of new project to match the above
-
-in osmfun/settings.py:
-
-```python
-DATABASES = {
-"default": {
-    "ENGINE": "django.contrib.gis.db.backends.postgis",
-    "NAME": "postgres",
-    "USER": "postgres",
-    "PASSWORD": "osm",
-    "HOST": "localhost",
-    "PORT": "49155",
-    }
-}
-```
-
-Extend installed_apps with the following apps:
-
-```python
-[
-    'django.contrib.gis',
-    "djangostreetmap",
-]
-```
 
 # Development
 
