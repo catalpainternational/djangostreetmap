@@ -12,6 +12,17 @@ from .tilegenerator import MvtQuery, OutOfZoomRangeException, Tile
 class ExampleMapView(TemplateView):
     template_name = "leaflet_tile_layers.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # The initial map view
+        highway_centroid = OsmHighway.objects.first().geom.centroid
+        highway_centroid.transform(4326)
+        zoom = 5
+
+        context["map_view"] = f"[{highway_centroid.y}, {highway_centroid.x}], {zoom}"
+        return context
+
 
 class TileLayerView(View):
     """
