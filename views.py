@@ -1,7 +1,5 @@
-# from django.shortcuts import render
-from typing import List, Optional
+from typing import List
 
-from django.core.cache import caches
 from django.db import connection
 from django.http.response import HttpResponse
 from django.views import View
@@ -32,9 +30,6 @@ class TileLayerView(View):
     """
 
     layers: List[MvtQuery] = []
-    cache_prefix: Optional[str] = None
-    cache_timeout: int = 3600
-    cache_name: str = "mvt_tile_cache"
 
     def get_layers(self, tile: Tile) -> List[MvtQuery]:
         """
@@ -42,9 +37,6 @@ class TileLayerView(View):
         based on tile properties (most likely zoom)
         """
         return self.layers
-
-    def _cache_key(self, tile: Tile) -> str:
-        return f"{self.cache_prefix}-{tile.zoom}-{tile.x}-{tile.y}"
 
     def _generate_tile(self, tile: Tile):
         with connection.cursor() as cursor:
@@ -60,35 +52,9 @@ class TileLayerView(View):
                     tiles += tile_response[0]
             return tiles
 
-    def _get_or_set_from_cache(self, tile: Tile) -> bytes:
-
-        if not self.cache_prefix:
-            return self._generate_tile(tile)
-
-        # If a specific cache is set for tiles, use it
-        # for better performance
-        try:
-            cache = caches[self.cache_name]
-        except KeyError:
-            try:
-                cache = caches["default"]
-            except KeyError:
-                return self._generate_tile(tile)
-
-        if not cache:
-            return self._generate_tile(tile)
-
-        key = self._cache_key(tile)
-
-        tiles = cache.get(key)
-        if tiles is None:
-            tiles = self._generate_tile(tile)
-            cache.set(key, tiles, self.cache_timeout)
-        return tiles
-
     def get(self, request, *args, **kwargs):
         tile = Tile(**kwargs)  # Expect to receive zoom, x, and y in kwargs
-        tiles = self._get_or_set_from_cache(tile)
+        tiles = self._generate_tile(tile)
         return HttpResponse(content=tiles, content_type="application/binary")
 
 

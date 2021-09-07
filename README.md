@@ -35,11 +35,18 @@ Extend installed_apps with the following apps:
 
 ## (Recommended) Set your cache
 
-You likely want to set a fast cache for your tiles like Memcached
-by adding an entry for `mvt_tile_cache` to your backend. If this is not found
+You likely want to set a fast cache for your tiles like Memcached. If this is not found
 the default cache will be used; this can be a bit slower and is very much non persistent
 This assumes you're running memcached (Linux: `apt install memcached`) and installed memcached(`pip install python-memcached`)
 
+```python
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+    }
+}
+```
 ## Running faster in testing
 
 Runserver is "ok" but this recipe will give faster performance for demonstration purposes
@@ -47,27 +54,6 @@ Runserver is "ok" but this recipe will give faster performance for demonstration
 ```
 pip install gunicorn
 gunicorn -w 8 osmfun.wsgi:application
-```
-
-```python
-CACHES = {
-    'mvt_tile_cache': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': '127.0.0.1:11211',
-    }
-}
-```
-
-While developing though, to see your changes you'll likely want to disable the tile caching. The default cache setting
-should suffice
-
-```python
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
-    }
-}
 ```
 
 # Writing Views
