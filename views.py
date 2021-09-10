@@ -5,7 +5,13 @@ from django.http.response import HttpResponse
 from django.views import View
 from django.views.generic.base import TemplateView
 
-from .models import OsmAdminBoundary, OsmHighway, OsmIslands, OsmIslandsAreas
+from .models import (
+    FacebookAiRoad,
+    OsmAdminBoundary,
+    OsmHighway,
+    OsmIslands,
+    OsmIslandsAreas,
+)
 from .tilegenerator import MvtQuery, OutOfZoomRangeException, Tile
 
 
@@ -59,8 +65,6 @@ class TileLayerView(View):
 
 
 class RoadLayerView(TileLayerView):
-    cache_prefix = "roads"
-
     def get_layers(self, tile: Tile):
         layers = []
         for road_class, min_zoom in [
@@ -97,15 +101,16 @@ class RoadLayerView(TileLayerView):
 
 
 class AdminBoundaryLayerView(TileLayerView):
-    cache_prefix = "admin"
     layers = [MvtQuery(table=OsmAdminBoundary._meta.db_table, attributes=["name"], layer="admin_boundary")]
 
 
 class IslandsLayerView(TileLayerView):
-    cache_prefix = "islands"
     layers = [MvtQuery(table=OsmIslands._meta.db_table, attributes=["name"], layer="islands")]
 
 
 class IslandsAreaLayerView(TileLayerView):
-    cache_prefix = "islands_area"
     layers = [MvtQuery(table=OsmIslandsAreas._meta.db_table, attributes=["name"], layer="islands")]
+
+
+class FacebookAiLayerView(TileLayerView):
+    layers = [MvtQuery(table=FacebookAiRoad._meta.db_table, attributes=["highway"], layer="facebookai")]
