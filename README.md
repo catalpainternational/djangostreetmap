@@ -1,4 +1,9 @@
-# Openstreetmap Vector Tiles
+# DjangoStreetMap
+
+DjangSstreetMap is a Django application to load OSM data into a postgis database and deliver OSM data as
+MVT tiles.
+
+## Openstreetmap Vector Tiles
 
 > "A vector tile is a lightweight data format for storing geospatial vector data"
 
@@ -15,6 +20,8 @@ This is a Django application to
 Tile generation is much faster when geometry is in srid=3857 (or maybe with an index in that SRID?)
 
 # Adding to a Project
+
+If necessary install psycopg2 in your env
 
 In your existing Django project, add this repo as a submodule:
 
@@ -77,10 +84,15 @@ Append the URL to your urls.py as follows. Note the zoom, x and y are mandatory.
 ## Running in Development
 
 ### Set up postgis
-
-docker run --name=osm -e POSTGRES_PASSWORD=osm -P postgis/postgis:12-3.1
-
-Find your port:
+```
+docker run --name=osm \
+    -e POSTGRES_DB=osm \
+    -e POSTGRES_USER=osm \
+    -e POSTGRES_PASSWORD=osm \
+    -p 49155:5432 \
+    postgis/postgis:12-3.1
+```
+Find your port: if you do not use `49155` as above:
 
 ```
 (env) josh@m4800:~/github/joshbrooks/djangostreetmap$ docker ps
@@ -110,11 +122,20 @@ DATABASES = {
 
 wget https://download.geofabrik.de/australia-oceania/papua-new-guinea-latest.osm.pbf
 
-wget https://raw.githubusercontent.com/gravitystorm/openstreetmap-carto/master/openstreetmap-carto.style
+or
+
+wget https://download.geofabrik.de/asia/east-timor-latest.osm.pbf
+
 
 ### Load your data (1 - osm2pgsql)
 
+Fetch the style file
+
+wget https://raw.githubusercontent.com/gravitystorm/openstreetmap-carto/master/openstreetmap-carto.style
+
 This will populate the "auto" fields
+
+Use the values from the database above
 
 osm2pgsql \
  --username postgres\
