@@ -19,7 +19,7 @@ Tile generation is much faster when geometry is in srid=3857 (or maybe with an i
 In your existing Django project, add this repo as a submodule:
 
 ```sh
-git submodule add /home/josh/github/joshbrooks/djangostreetmap djangostreetmap
+git submodule add git@github.com:joshbrooks/djangostreetmap.git djangostreetmap
 ```
 
 Set the settings of new project to match the above
