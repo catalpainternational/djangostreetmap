@@ -1,4 +1,0 @@
--c dev.txt
-django
-pytest
-pytest-django

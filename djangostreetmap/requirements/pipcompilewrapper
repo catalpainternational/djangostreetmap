@@ -1,5 +1,0 @@
-#!/bin/sh
-export CUSTOM_COMPILE_COMMAND="./pipcompilewrapper"
-pip-compile base.in
-pip-compile dev.in
-pip-compile test.in
