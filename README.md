@@ -26,7 +26,7 @@ If necessary install psycopg2 in your env
 In your existing Django project, add this repo as a submodule:
 
 ```sh
-git submodule add /home/josh/github/joshbrooks/djangostreetmap djangostreetmap
+git submodule add git@github.com:joshbrooks/djangostreetmap.git djangostreetmap
 ```
 
 Set the settings of new project to match the above

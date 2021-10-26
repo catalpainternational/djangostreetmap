@@ -5,12 +5,29 @@ from django.http.response import HttpResponse
 from django.views import View
 from django.views.generic.base import TemplateView
 
-from .models import OsmAdminBoundary, OsmHighway, OsmIslands, OsmIslandsAreas
+from .models import (
+    FacebookAiRoad,
+    OsmAdminBoundary,
+    OsmHighway,
+    OsmIslands,
+    OsmIslandsAreas,
+)
 from .tilegenerator import MvtQuery, OutOfZoomRangeException, Tile
 
 
 class ExampleMapView(TemplateView):
     template_name = "leaflet_tile_layers.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # The initial map view
+        highway_centroid = OsmHighway.objects.first().geom.centroid
+        highway_centroid.transform(4326)
+        zoom = 5
+
+        context["map_view"] = f"[{highway_centroid.y}, {highway_centroid.x}], {zoom}"
+        return context
 
 
 class TileLayerView(View):
@@ -48,8 +65,6 @@ class TileLayerView(View):
 
 
 class RoadLayerView(TileLayerView):
-    cache_prefix = "roads"
-
     def get_layers(self, tile: Tile):
         layers = []
         for road_class, min_zoom in [
@@ -86,15 +101,16 @@ class RoadLayerView(TileLayerView):
 
 
 class AdminBoundaryLayerView(TileLayerView):
-    cache_prefix = "admin"
     layers = [MvtQuery(table=OsmAdminBoundary._meta.db_table, attributes=["name"], layer="admin_boundary")]
 
 
 class IslandsLayerView(TileLayerView):
-    cache_prefix = "islands"
     layers = [MvtQuery(table=OsmIslands._meta.db_table, attributes=["name"], layer="islands")]
 
 
 class IslandsAreaLayerView(TileLayerView):
-    cache_prefix = "islands_area"
     layers = [MvtQuery(table=OsmIslandsAreas._meta.db_table, attributes=["name"], layer="islands")]
+
+
+class FacebookAiLayerView(TileLayerView):
+    layers = [MvtQuery(table=FacebookAiRoad._meta.db_table, attributes=["highway"], layer="facebookai")]

@@ -16,7 +16,7 @@
     <body>
         <div id="mapid" style="width: 1800px; height: 1000px"></div>
         <script>
-            var mymap = L.map("mapid").setView([-8, 148], 5);
+            var mymap = L.map("mapid").setView({{map_view}});
 
             const road_opts = {
                 interactive: true,
@@ -54,11 +54,10 @@
                     }
                 }
             };
-
-            const islands = L.vectorGrid.protobuf("/islands/{z}/{x}/{y}.pbf", opts).addTo(mymap);
+            const islands = L.vectorGrid.protobuf("{% url 'djangostreetmap:islands' %}{z}/{x}/{y}.pbf", opts).addTo(mymap);
 
             const adm = L.vectorGrid
-                .protobuf("/admboundary/{z}/{x}/{y}.pbf", opts)
+                .protobuf("{% url 'djangostreetmap:admin' %}{z}/{x}/{y}.pbf", opts)
                 .on("click", function (e) {
                     L.popup()
                         .setContent(e.layer.properties.name || e.layer.properties.type)
@@ -69,7 +68,7 @@
                 .addTo(mymap);
 
             const highways = L.vectorGrid
-                .protobuf("/highways/{z}/{x}/{y}.pbf", road_opts)
+                .protobuf("{% url 'djangostreetmap:highways' %}{z}/{x}/{y}.pbf", road_opts)
                 .on("click", function (e) {
                     L.popup()
                         .setContent(`Name: ${e.layer.properties.name}, type: ${e.layer.properties.highway}`)

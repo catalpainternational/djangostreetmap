@@ -27,3 +27,9 @@ class OsmIslands(models.Model):
 class OsmIslandsAreas(models.Model):
     geom = MultiPolygonField(srid=3857)
     name = models.TextField(null=True, blank=True)
+
+
+class FacebookAiRoad(models.Model):
+    way_fbid = models.BigIntegerField()
+    geom = MultiLineStringField(srid=3857)
+    highway = models.TextField()

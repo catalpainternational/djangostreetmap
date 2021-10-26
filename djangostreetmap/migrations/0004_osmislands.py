@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name="OsmIslands",
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("geom", django.contrib.gis.db.models.fields.MultiLineStringField(srid=4326)),
+                ("geom", django.contrib.gis.db.models.fields.MultiLineStringField(srid=3857)),
                 ("name", models.TextField(blank=True, null=True)),
             ],
         ),
