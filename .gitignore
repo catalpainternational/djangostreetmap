@@ -4,3 +4,4 @@ env/
 
 notebooks/.ipynb_checkpoints/
 .pat
+dist/

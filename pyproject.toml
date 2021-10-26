@@ -19,3 +19,24 @@ exclude = '''
   | simple_locations
 )/
 '''
+
+[tool.poetry]
+name = "djangostreetmap"
+version = "0.1.0"
+description = ""
+authors = ["Joshua Brooks <josh.vdbroek@gmail.com>"]
+license = "GPLv3"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+osmium = "^3.2.0"
+
+[tool.poetry.dev-dependencies]
+black = "^21.9b0"
+mypy = "^0.910"
+isort = "^5.9.3"
+pre-commit = "^2.15.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

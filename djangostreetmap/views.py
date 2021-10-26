@@ -44,7 +44,7 @@ class TileLayerView(View):
         """
         return self.layers
 
-    def _generate_tile(self, tile: Tile):
+    def _generate_tile(self, tile: Tile) -> bytes:
         with connection.cursor() as cursor:
             tiles = b""
             for layer in self.get_layers(tile):
