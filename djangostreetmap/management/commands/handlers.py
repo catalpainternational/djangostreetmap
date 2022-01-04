@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import osmium
 from django.contrib.gis.geos import GEOSGeometry, MultiLineString
 from django.db.models.query import QuerySet
@@ -13,6 +15,13 @@ def way_to_linestring(factory, way):
     return geos_multilinestring
 
 
+def gettags(way, *names: Iterable):
+    """
+    Get only selected tags from a given way
+    """
+    return {name: way.tags.get(name, None) for name in names}
+
+
 class HighwayHandler(osmium.SimpleHandler):
     def __init__(self):
         super().__init__()
@@ -22,8 +31,7 @@ class HighwayHandler(osmium.SimpleHandler):
     def way(self, way: osmium.osm.Way):
         if way.tags.get("highway"):
             self.queryset.filter(id=way.id).delete()
-
-            self.queryset.create(id=way.id, geom=way_to_linestring(self.factory, way), name=way.tags.get("name", None), highway=way.tags.get("highway"))
+            self.queryset.create(id=way.id, geom=way_to_linestring(self.factory, way), **gettags(way, "name", "highway"))
 
 
 class OsmAdminBoundaryHandler(osmium.SimpleHandler):
@@ -36,11 +44,7 @@ class OsmAdminBoundaryHandler(osmium.SimpleHandler):
         if way.tags.get("boundary") == "administrative":
 
             self.queryset.filter(id=way.id).delete()
-            self.queryset.create(
-                id=way.id,
-                geom=way_to_linestring(self.factory, way),
-                name=way.tags.get("name", None),
-            )
+            self.queryset.create(id=way.id, geom=way_to_linestring(self.factory, way), **gettags(way, "name"))
 
 
 class OsmIslandsBoundaryHandler(osmium.SimpleHandler):
@@ -54,19 +58,11 @@ class OsmIslandsBoundaryHandler(osmium.SimpleHandler):
         if way.tags.get("place") == "island":
 
             self.queryset.filter(id=way.id).delete()
-            self.queryset.create(
-                id=way.id,
-                geom=way_to_linestring(self.factory, way),
-                name=way.tags.get("name", None),
-            )
+            self.queryset.create(id=way.id, geom=way_to_linestring(self.factory, way), **gettags(way, "name"))
 
     def area(self, area):
         if area.tags.get("place") == "island":
             self.areas.filter(id=area.id).delete()
             geom = GEOSGeometry(self.factory.create_multipolygon(area), srid=4326)
             geom.transform(3857)
-            self.areas.create(
-                id=area.id,
-                geom=geom,
-                name=area.tags.get("name", None),
-            )
+            self.areas.create(id=area.id, geom=geom, **gettags(area, "name"))

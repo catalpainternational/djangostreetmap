@@ -14,12 +14,12 @@ For an introduction to OSM see [openstreetmap.org](https://www.openstreetmap.org
 
 This is a Django application to
 
-1.  Import OSM data as Django models
-2.  Expose Django models as MVT (Mapbox Vector Tile) geographic format data
+1. Import OSM data as Django models
+2. Expose Django models as MVT (Mapbox Vector Tile) geographic format data
 
 Tile generation is much faster when geometry is in srid=3857 (or maybe with an index in that SRID?)
 
-# Adding to a Project
+## Adding to a Project
 
 If necessary install psycopg2 in your env
 
@@ -54,16 +54,17 @@ CACHES = {
     }
 }
 ```
+
 ## Running faster in testing
 
 Runserver is "ok" but this recipe will give faster performance for demonstration purposes
 
-```
+```bash
 pip install gunicorn
 gunicorn -w 8 osmfun.wsgi:application
 ```
 
-# Writing Views
+## Writing Views
 
 To set up a new View, create a subclass of TileLayerView with some `MvtQuery` instances as layers:
 
@@ -84,7 +85,8 @@ Append the URL to your urls.py as follows. Note the zoom, x and y are mandatory.
 ## Running in Development
 
 ### Set up postgis
-```
+
+```bash
 docker run --name=osm \
     -e POSTGRES_DB=osm \
     -e POSTGRES_USER=osm \
@@ -92,9 +94,10 @@ docker run --name=osm \
     -p 49155:5432 \
     postgis/postgis:12-3.1
 ```
+
 Find your port: if you do not use `49155` as above:
 
-```
+```sh
 (env) josh@m4800:~/github/joshbrooks/djangostreetmap$ docker ps
 CONTAINER ID   IMAGE                            COMMAND                  CREATED          STATUS             PORTS                                         NAMES
 c619232fe38a   postgis/postgis:12-3.1           "docker-entrypoint.s…"   33 seconds ago   Up 32 seconds      0.0.0.0:49155->5432/tcp, :::49155->5432/tcp   osm
@@ -106,14 +109,14 @@ OSM is on port 49155
 To apply this to your project:
 
 ```python
-DATABASES = {
-"default": {
-    "ENGINE": "django.contrib.gis.db.backends.postgis",
-    "NAME": "postgres",
-    "USER": "postgres",
-    "PASSWORD": "osm",
-    "HOST": "localhost",
-    "PORT": "49155",
+  DATABASES = {
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "USER": "postgres",
+        "PASSWORD": "post1233",
+        "HOST": "localhost",
+        "PORT": "49159",
+        "NAME": "postgres",
     }
 }
 ```
@@ -126,33 +129,17 @@ or
 
 wget https://download.geofabrik.de/asia/east-timor-latest.osm.pbf
 
+You can also use the management command with a region and country name: this is also able to update existing data.
 
-### Load your data (1 - osm2pgsql)
+```sh
+./manage.py osm_update asia east-timor --cache_dir=/home/josh/Desktop/osm/
+```
 
-Fetch the style file
-
-wget https://raw.githubusercontent.com/gravitystorm/openstreetmap-carto/master/openstreetmap-carto.style
-
-This will populate the "auto" fields
-
-Use the values from the database above
-
-osm2pgsql \
- --username postgres\
- --database postgres\
- --password\
- --host localhost\
- --port 49155\
- --style openstreetmap-carto.style\
- --proj 4326\
- --create\
- papua-new-guinea-latest.osm.pbf
-
-### Load your data (Method 2 - Using osmium)
+### Load your data using Osmium
 
 A simple handler for osmium might look like this:
 
-```
+```python
 class Handler(osmium.SimpleHandler):
     def __init__(self):
         super().__init__()
@@ -173,7 +160,7 @@ Handler().apply_file(path_to_file, locations=True)
 
 You can then apply this in a Command like this:
 
-```
+```bash
 class Command(BaseCommand):
     help = "Import roads from an OSM pbf file"
 
@@ -181,45 +168,28 @@ class Command(BaseCommand):
         parser.add_argument("osmfile", type=str, help="Path to the OSM file with the data to import")
 
     def handle(self, *args, **options):
-        # HighwayHandler().apply_file(options["osmfile"], locations=True)
-        # OsmAdminBoundaryHandler().apply_file(options["osmfile"], locations=True)
+        HighwayHandler().apply_file(options["osmfile"], locations=True)
+        OsmAdminBoundaryHandler().apply_file(options["osmfile"], locations=True)
         OsmIslandsBoundaryHandler().apply_file(options["osmfile"], locations=True)
 ```
 
 ### Exploring data
 
-psql --host localhost --username postgres --port 49155
-
-### Add ID's to the planet tables
-
-psql --host localhost --username postgres --port 49155
-
-```sql
-ALTER TABLE Planet_Osm_Line ADD COLUMN unique_id SERIAL PRIMARY KEY;
-ALTER TABLE Planet_Osm_Point ADD COLUMN unique_id SERIAL PRIMARY KEY;
-ALTER TABLE Planet_Osm_Polygon ADD COLUMN unique_id SERIAL PRIMARY KEY;
-```
-
-... and drop the useless roads table
-it's duplicated in lines anyway and seems to miss a of road instances
-
-```sql
-DROP TABLE Planet_Osm_Roads;
-```
+psql --host localhost --username postgres --port 49159
 
 ### Qgis
 
--   Add a new Postgres Connection with the following settings:
+- Add a new Postgres Connection with the following settings:
 
-Name: Papua New Guinea Roads
+Name: DjangoStreetMap
 Host: localhost
 Port: 49155
 Database: postgres
 
 Authentication: Basic
-postgres / osm
+postgres / post1233
 
-# Development
+## Development
 
 Code is blacked, flaked, isorted and mypy'd.
 

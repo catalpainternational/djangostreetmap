@@ -14,7 +14,7 @@
         <script type="text/javascript" src="https://unpkg.com/leaflet.vectorgrid@1.2.0"></script>
     </head>
     <body>
-        <div id="mapid" style="width: 1800px; height: 1000px"></div>
+        <div id="mapid" style="width: 1800px; height: 1000px; background:#aad3df"></div>
         <script>
             var mymap = L.map("mapid").setView({{map_view}});
 
@@ -22,19 +22,49 @@
                 interactive: true,
                 vectorTileLayerStyles: {
                     trunk: {weight: 2, color: "red"},
-                    road: {weight: 1, color: "gray"},
-                    secondary: {weight: 1, color: "orange"},
+                    road: {weight: 1, color: "white"},
+                    secondary: function(properties, zoom){
+                        const c = '#f7fabf';
+                        if (zoom < 6){ return {weight: 1, color: c} };
+                        if (zoom < 10){ return {weight: 3, color: c} };
+                        return {weight: 5, color: c}
+                    },
                     trunk_link: {weight: 2, color: "red"},
-                    tertiary: {weight: 2, color: "yellow"},
-                    secondary_link: {weight: 2, color: "orange"},
-                    tertiary_link: {weight: 2, color: "yellow"},
-                    primary: {weight: 1, color: "red"},
-                    residential: {weight: 1, color: "gray"},
-                    primary_link: {weight: 2, color: "red"},
-                    track: {weight: 1, color: "gray"},
-                    service: {weight: 1, color: "gray"},
-                    unclassified: {weight: 1, color: "gray"},
-                    path: {weight: 0.5, color: "gray"},
+                    tertiary: function(properties, zoom){
+                        const c = '#ffffff';
+                        if (zoom < 6){ return {weight: 1, color: c} };
+                        if (zoom < 10){ return {weight: 2, color: c} };
+                        return {weight: 3, color: c}
+                    },
+                    secondary_link: function(properties, zoom){
+                        const c = '#f7fabf';
+                        if (zoom < 6){ return {weight: 1, color: c} };
+                        if (zoom < 10){ return {weight: 2, color: c} };
+                        return {weight: 4, color: c}
+                    },
+                    tertiary_link: function(properties, zoom){
+                        const c = '#ffffff';
+                        if (zoom < 6){ return {weight: 1, color: c} };
+                        if (zoom < 10){ return {weight: 3, color: c} };
+                        return {weight: 5, color: c}
+                    },
+                    primary: function(properties, zoom){
+                        const c = '#fcd6a4';
+                        if (zoom < 6){ return {weight: 1, color: c} };
+                        if (zoom < 10){ return {weight: 3, color: c} };
+                        return {weight: 5, color: c}
+                    },
+                    residential: {weight: 1, color: "ffffff"},
+                    primary_link: function(properties, zoom){
+                        const c = '#fcd6a4';
+                        if (zoom < 6){ return {weight: 1, color: c} };
+                        if (zoom < 10){ return {weight: 3, color: c} };
+                        return {weight: 5, color: c}
+                    },
+                    track: {weight: 1, color: "white"},
+                    service: {weight: 1, color: "white"},
+                    unclassified: {weight: 1, color: "white"},
+                    path: {weight: 0.5, color: "white"},
                 }
             }
 
@@ -43,22 +73,31 @@
                 vectorTileLayerStyles: {
                     admin_boundary: {
                         weight: 2,
-                        color: "blue"
+                        color: "#cdbcc9",
+                        fillColor: "#f2efe9",
+                        fillOpacity: 1,
+                        fill: true
                     },
                     islands: {
                         weight: 1,
-                        color: "blue",
-                        fillColor: "#9bc2c4",
+                        color: "#cdbcc9",
+                        fillColor: "#f2efe9",
                         fillOpacity: 1,
                         fill: true
                     }
                 }
             };
-            const islands = L.vectorGrid.protobuf("{% url 'djangostreetmap:islands' %}{z}/{x}/{y}.pbf", opts).addTo(mymap);
+            const islands = L.vectorGrid.protobuf("{% url 'djangostreetmap:islands' %}{z}/{x}/{y}.pbf", opts).on("mouseover", function (e) {
+                    L.popup()
+                        .setContent(e.layer.properties.name || e.layer.properties.type)
+                        .setLatLng(e.latlng)
+                        .openOn(mymap);
+                    L.DomEvent.stop(e);
+                }).addTo(mymap);
 
             const adm = L.vectorGrid
                 .protobuf("{% url 'djangostreetmap:admin' %}{z}/{x}/{y}.pbf", opts)
-                .on("click", function (e) {
+                .on("mouseover", function (e) {
                     L.popup()
                         .setContent(e.layer.properties.name || e.layer.properties.type)
                         .setLatLng(e.latlng)
@@ -69,7 +108,7 @@
 
             const highways = L.vectorGrid
                 .protobuf("{% url 'djangostreetmap:highways' %}{z}/{x}/{y}.pbf", road_opts)
-                .on("click", function (e) {
+                .on("mouseover", function (e) {
                     L.popup()
                         .setContent(`Name: ${e.layer.properties.name}, type: ${e.layer.properties.highway}`)
                         .setLatLng(e.latlng)
