@@ -13,8 +13,8 @@ repos:
       - id: isort
         name: isort (python)
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: '449ace5'
-    hooks:
-    -   id: mypy
-        additional_dependencies: [django-types]
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: '449ace5'
+  #   hooks:
+  #   -   id: mypy
+  #       additional_dependencies: [django-types]

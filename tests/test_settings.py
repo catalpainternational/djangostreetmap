@@ -85,6 +85,7 @@ DATABASES = {
         "HOST": "localhost",
         "PORT": "49159",
         "NAME": "postgres",
+        "TEST": {"NAME": "foobaz"},
     }
 }
 # Password validation

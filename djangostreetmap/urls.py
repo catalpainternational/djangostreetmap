@@ -6,6 +6,8 @@ from .views import (
     ExampleMapView,
     FacebookAiLayerView,
     IslandsAreaLayerView,
+    OverpassJSONView,
+    OverpassView,
     RoadLayerView,
 )
 
@@ -16,10 +18,13 @@ urlpatterns = [
     path("admboundary/<int:zoom>/<int:x>/<int:y>.pbf", cache_page(60 * 15)(AdminBoundaryLayerView.as_view()), name="admin"),
     path("islands/<int:zoom>/<int:x>/<int:y>.pbf", cache_page(60 * 15)(IslandsAreaLayerView.as_view()), name="islands"),
     path("facebookai/<int:zoom>/<int:x>/<int:y>.pbf", cache_page(60 * 15)(FacebookAiLayerView.as_view()), name="islands"),
+    path("overpass/<int:zoom>/<int:x>/<int:y>.pbf", cache_page(60 * 15)(OverpassView.as_view()), name="overpass"),
     path("example_map", ExampleMapView.as_view()),
     # These allow maps to make reverse URL calls a little easier
     path("highways/", RoadLayerView.as_view(), name="highways"),
     path("admboundary/", AdminBoundaryLayerView.as_view(), name="admin"),
     path("islands/", IslandsAreaLayerView.as_view(), name="islands"),
     path("facebookai/", FacebookAiLayerView.as_view(), name="facebookai"),
+    path("overpass/", OverpassView.as_view(), name="overpass"),
+    path("overpassjson/", OverpassJSONView.as_view(), name="overpassjson"),
 ]

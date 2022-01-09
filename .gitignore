@@ -5,3 +5,5 @@ env/
 notebooks/.ipynb_checkpoints/
 .pat
 dist/
+cache/
+node_modules/

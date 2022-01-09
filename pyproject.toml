@@ -30,12 +30,17 @@ license = "GPLv3"
 [tool.poetry.dependencies]
 python = "^3.7"
 osmium = "^3.2.0"
+requests = "^2.27.1"
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"
 mypy = "^0.910"
 isort = "^5.9.3"
 pre-commit = "^2.15.0"
+pytest = "^6.2.5"
+pytest-django = "^4.5.2"
+requests-mock = "^1.9.3"
+types-requests = "^2.27.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

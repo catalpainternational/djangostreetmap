@@ -1,5 +1,6 @@
 from typing import List
 
+from django.core.serializers import serialize
 from django.db import connection
 from django.http.response import HttpResponse
 from django.views import View
@@ -11,6 +12,7 @@ from .models import (
     OsmHighway,
     OsmIslands,
     OsmIslandsAreas,
+    OverpassResult,
 )
 from .tilegenerator import MvtQuery, OutOfZoomRangeException, Tile
 
@@ -114,3 +116,20 @@ class IslandsAreaLayerView(TileLayerView):
 
 class FacebookAiLayerView(TileLayerView):
     layers = [MvtQuery(table=FacebookAiRoad._meta.db_table, attributes=["highway"], layer="facebookai")]
+
+
+class OverpassView(TileLayerView):
+    layers = [
+        MvtQuery(
+            table=OverpassResult._meta.db_table,
+            # filters=["tag -> 'healthcare' IS NOT NULL"]
+            attributes=["tags"],
+            layer="overpass",
+        )
+    ]
+
+
+class OverpassJSONView(TemplateView):
+    def get(self, request, *args, **kwargs):
+        content = serialize("geojson", OverpassResult.objects.all(), geometry_field="geom", fields=("name",))
+        return HttpResponse(content=content, content_type="application/json")
