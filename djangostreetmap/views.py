@@ -95,6 +95,7 @@ class RoadLayerView(TileLayerView):
             )
         return layers
 
+
 class IslandsLayerView(TileLayerView):
     layers = [MvtQuery(table=OsmIslands._meta.db_table, attributes=["name"], layer="islands")]
 
@@ -113,7 +114,7 @@ class OverpassView(TileLayerView):
             table=OverpassResult._meta.db_table,
             attribute_map={
                 "highway": """"tags" -> 'highway' """,
-                "name": '''"tags" -> 'name' ''',
+                "name": """"tags" -> 'name' """,
             },
             layer="overpass",
         )

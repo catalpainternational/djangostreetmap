@@ -61,7 +61,7 @@ Runserver is "ok" but this recipe will give faster performance for demonstration
 
 ```bash
 pip install gunicorn
-gunicorn -w 8 osmfun.wsgi:application
+gunicorn -w 8 djangostreetmap.wsgi:application
 ```
 
 ## Writing Views
@@ -121,57 +121,14 @@ To apply this to your project:
 }
 ```
 
-### Fetch your data
+### Fetching Coastlines
 
-wget https://download.geofabrik.de/australia-oceania/papua-new-guinea-latest.osm.pbf
+Visit the site `osm-boundaries.com`...'
 
-or
+You should get a URL like `https://osm-boundaries.com/Download/Submit?apiKey=54abd7a2f0086a243aa1d03ef05d8f3f&db=osm20211206&osmIds=-307866&recursive&format=GeoJSON&srid=3857&landOnly&includeAllTags` to download
 
-wget https://download.geofabrik.de/asia/east-timor-latest.osm.pbf
+TODO: Complete doc for download
 
-You can also use the management command with a region and country name: this is also able to update existing data.
-
-```sh
-./manage.py osm_update asia east-timor --cache_dir=/home/josh/Desktop/osm/
-```
-
-### Load your data using Osmium
-
-A simple handler for osmium might look like this:
-
-```python
-class Handler(osmium.SimpleHandler):
-    def __init__(self):
-        super().__init__()
-        self.factory = osmium.geom.WKBFactory()
-        self.queryset = my_model.objects.all()  # type: QuerySet
-
-    def area(self, area):
-        if area.tags.get("place") == "island":
-            self.areas.filter(id=area.id).delete()
-            self.areas.create(
-                id=area.id,
-                geom=GEOSGeometry(self.factory.create_multipolygon(area)),
-                name=area.tags.get("name", None),
-            )
-
-Handler().apply_file(path_to_file, locations=True)
-```
-
-You can then apply this in a Command like this:
-
-```bash
-class Command(BaseCommand):
-    help = "Import roads from an OSM pbf file"
-
-    def add_arguments(self, parser):
-        parser.add_argument("osmfile", type=str, help="Path to the OSM file with the data to import")
-
-    def handle(self, *args, **options):
-        HighwayHandler().apply_file(options["osmfile"], locations=True)
-        OsmAdminBoundaryHandler().apply_file(options["osmfile"], locations=True)
-        OsmIslandsBoundaryHandler().apply_file(options["osmfile"], locations=True)
-```
 
 ### Exploring data
 

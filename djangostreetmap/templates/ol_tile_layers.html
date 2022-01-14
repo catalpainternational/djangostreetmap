@@ -7,11 +7,11 @@
             crossorigin=""
         />
         <script
-            src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-            integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-            crossorigin=""
+            src="https://unpkg.com/leaflet@1.7.1/dist/leaflet-src.js"
         ></script>
-        <script type="text/javascript" src="https://unpkg.com/leaflet.vectorgrid@1.2.0"></script>
+        <!-- <script type="text/javascript" src="https://unpkg.com/leaflet.vectorgrid@1.2.0"></script>         -->
+        <script type="text/javascript" src="https://unpkg.com/leaflet.vectorgrid@1.3.0/dist/Leaflet.VectorGrid.bundled.js"></script>
+
     </head>
     <body>
         <div id="mapid" style="width: 1800px; height: 1000px; background:#aad3df"></div>
@@ -54,7 +54,7 @@
                         if (zoom < 10){ return {weight: 3, color: c} };
                         return {weight: 5, color: c}
                     },
-                    residential: function(properties, zoom){return {weight: 1, color: "#ffffff"}},
+                    residential: {weight: 1, color: "ffffff"},
                     primary_link: function(properties, zoom){
                         const c = '#fcd6a4';
                         if (zoom < 6){ return {weight: 1, color: c} };
@@ -71,8 +71,15 @@
             const opts = {
                 interactive: true,
                 vectorTileLayerStyles: {
-                    boundaries: {
+                    admin_boundary: {
                         weight: 2,
+                        color: "#cdbcc9",
+                        fillColor: "#f2efe9",
+                        fillOpacity: 1,
+                        fill: true
+                    },
+                    islands: {
+                        weight: 1,
                         color: "#cdbcc9",
                         fillColor: "#f2efe9",
                         fillOpacity: 1,
@@ -106,29 +113,28 @@
             //             .openOn(mymap);
             //         L.DomEvent.stop(e);
             //     }).addTo(mymap);
-            const bounds = L.vectorGrid
-                .protobuf("{% url 'djangostreetmap:boundary' %}{z}/{x}/{y}.pbf", opts)
-                // .on("mouseover", function (e) {
-                //     L.popup()
-                //         .setContent(`Name: ${e.layer.properties.name}, type: ${e.layer.properties.highway}`)
-                //         .setLatLng(e.latlng)
-                //         .openOn(mymap);
-                //     L.DomEvent.stop(e);
-                // })
-                .addTo(mymap);
 
-            const highways = L.vectorGrid
-                .protobuf("{% url 'djangostreetmap:highways' %}{z}/{x}/{y}.pbf", road_opts)
-                .on("mouseover", function (e) {
-                    L.popup()
-                        .setContent(`Name: ${e.layer.properties.name}, type: ${e.layer.properties.highway}`)
-                        .setLatLng(e.latlng)
-                        .openOn(mymap);
-                    L.DomEvent.stop(e);
-                })
-                .addTo(mymap);
+            // const adm = L.vectorGrid
+            //     .protobuf("{% url 'djangostreetmap:admin' %}{z}/{x}/{y}.pbf", opts)
+            //     .on("mouseover", function (e) {
+            //         L.popup()
+            //             .setContent(e.layer.properties.name || e.layer.properties.type)
+            //             .setLatLng(e.latlng)
+            //             .openOn(mymap);
+            //         L.DomEvent.stop(e);
+            //     })
+            //     .addTo(mymap);
 
-
+            // const highways = L.vectorGrid
+            //     .protobuf("{% url 'djangostreetmap:highways' %}{z}/{x}/{y}.pbf", road_opts)
+            //     .on("mouseover", function (e) {
+            //         L.popup()
+            //             .setContent(`Name: ${e.layer.properties.name}, type: ${e.layer.properties.highway}`)
+            //             .setLatLng(e.latlng)
+            //             .openOn(mymap);
+            //         L.DomEvent.stop(e);
+            //     })
+            //     .addTo(mymap);
             // debugger;
             // const overpass = L.vectorGrid
             //     .protobuf("{% url 'djangostreetmap:overpass' %}{z}/{x}/{y}.pbf", overpass_style)
@@ -140,7 +146,7 @@
             //         })
             //     .addTo(mymap);
 
-            // fetch("{% url 'djangostreetmap:overpassjson' %}").then( (data) => data.json()).then( (json_data) => L.geoJSON(json_data).addTo(mymap));
+            fetch("{% url 'djangostreetmap:overpassjson' %}").then( (data) => data.json()).then( (json_data) => L.geoJSON(json_data).addTo(mymap));
         </script>
     </body>
 </html>

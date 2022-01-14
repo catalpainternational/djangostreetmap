@@ -17,6 +17,8 @@ from django.db import models, transaction
 from django.utils.text import slugify
 from django.utils.timezone import now
 
+from django.contrib.postgres.indexes import GinIndex
+from requests.models import HTTPError
 from .annotations import GeoJsonFeature, GeoJsonFeatureCollection
 
 T = TypeVar("T")
@@ -48,10 +50,14 @@ class OsmBoundaryManager(models.Manager):
 
         """
         Download a compressed geoJSON file from osm-boundaries.com
+
+        For TL the `osmids` is -305142
+        For PG the `osmids` is -307866
+        For AU the `osmids` is -80500
         """
 
         defaults = dict(
-            apiKey=getattr(settings, "BOUNDARIES_API_KEY"),  # Josh's OSM key
+            apiKey="54abd7a2f0086a243aa1d03ef05d8f3f",  # Josh's OSM key
             db="osm20211206",  # Replace this with latest value
             osmIds="-305142",  # Replace this with OSM ID of the country to get
             recursive="...",
@@ -63,33 +69,24 @@ class OsmBoundaryManager(models.Manager):
 
         # The tags with "..." are key-only
         if url:
-            response = requests.get(url)
+            pass
         else:
-            response = requests.get("https://osm-boundaries.com?" + urlencode({**defaults, **(params or {})}).replace("=...", ""))
+            url = "https://osm-boundaries.com/Download/Submit?" + urlencode({**defaults, **(params or {})}).replace("=...", "")
+
+        response = requests.get(url)
         response.raise_for_status()
         # Data delivered as GZIP compressed geoJSON
 
         data_uc = gzip.decompress(response.content)
         json_data = json.loads(data_uc)
-        json_data["features"]
-        self.create_from_featurecollection(json_data)
 
-    def _load_from_file(self):
-        if not self.response:
-            raise FileNotFoundError
-        self._make_from_overpass_json(json.loads(self.response.read()))
+        self.create_from_featurecollection(json_data)
 
 
 class OsmHighway(models.Model):
     geom = MultiLineStringField(srid=3857)
     name = models.TextField(null=True, blank=True)
     highway = models.TextField()
-
-
-class OsmAdminBoundary(models.Model):
-    geom = MultiLineStringField(srid=3857)
-    name = models.TextField(null=True, blank=True)
-
 
 class OsmIslands(models.Model):
     geom = MultiLineStringField(srid=3857)
@@ -145,7 +142,10 @@ class OverpassManager(models.Manager):
             OverpassQuery.objects.get_or_create(
                 name=f"highway={road_type} for {countrycode}", query=self.query.format(countrycode=countrycode, node_or_way="way", tag=f"highway={road_type}")
             )
-
+    def nodes_for_country(self, countrycode="TL", tag="heathcare"):
+        OverpassQuery.objects.get_or_create(
+            name=f"{tag} nodes for {countrycode}", query=self.query.format(countrycode=countrycode, node_or_way="way", tag=tag)
+        )
 
 # Overpass API models
 class OverpassQuery(models.Model):
@@ -165,7 +165,10 @@ class OverpassQuery(models.Model):
             raise FileExistsError
 
         logger.info("Requesting: %s", self.query)
-        response = requests.post(url=url, data={"data": self.query})
+        try:
+                response = requests.post(url=url, data={"data": self.query})
+        except HTTPError as E:
+            raise HTTPError("If you got a 429 please try again soon")
         response.raise_for_status()
 
         file_name = slugify(self.name or "unknown") + ".json"
@@ -206,6 +209,8 @@ class OverpassResultManager(models.Manager):
         instance = self.update_or_create(defaults={"osm_id": fragment["id"]}, geom=geometry, tags=tags, query=query)[0]
         return instance
 
+    def highway(self):
+        return self.get_queryset().filter(tags__highway__isnull=False)
 
 class OverpassResult(models.Model):
     """
@@ -223,6 +228,13 @@ class OverpassResult(models.Model):
 
     objects = OverpassResultManager()
 
+    # CREATE INDEX idxgintags ON api USING GIN ((jdoc -> 'tags'));
+
+    class Meta:
+        indexes = [
+            GinIndex(fields=["tags"]),
+        ]
+
 
 class OsmBoundary(models.Model):
     """
@@ -236,3 +248,59 @@ class OsmBoundary(models.Model):
     osm_id = models.BigIntegerField(null=True, blank=True)
 
     objects = OsmBoundaryManager()
+
+
+
+## Raw OSM data queries below. Dragons!
+
+class OsmNode(models.Model):
+    id = models.BigIntegerField(primary_key = True)
+    # Lat and Lon may not be know (yet) at time of importing ways or relations
+    lat = models.FloatField(null=True, blank=True)
+    lon = models.FloatField(null=True, blank=True)
+    srid = models.IntegerField(null=True, blank=True)  # This depends on the Query rather than the Node itself
+    tags = models.JSONField(null = True, blank=True)
+
+class OsmWay(models.Model):
+    id = models.BigIntegerField(primary_key = True)
+    tags = models.JSONField(null = True, blank=True)
+
+class OsmRelation(models.Model):
+    id = models.BigIntegerField(primary_key = True)
+    tags = models.JSONField(null = True, blank=True)
+
+class OsmNodeWay(models.Model):
+    node = models.ForeignKey(OsmNode, on_delete=models.CASCADE)
+
+    # nd_ref = models.IntegerField(null=True, blank=True)  # This is a "future reference" to a Node, used where "out geom" is used in the query
+    way = models.ForeignKey(OsmWay, on_delete=models.CASCADE)
+    ordinality = models.IntegerField()
+
+    # Way and Ordinality should be unique
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["way", "ordinality"], name="unique_ordinality")
+        ]
+
+class OsmRelationMember(models.Model):
+    """
+    A "member" may be either a Node or a Way
+    """
+    node = models.ForeignKey(OsmNode, null=True, blank=True, on_delete=models.CASCADE)
+    way = models.ForeignKey(OsmWay, null=True, blank=True, on_delete=models.CASCADE)
+    role = models.TextField(null=True, blank=True)
+    relation = models.ForeignKey(OsmRelation, null=True, blank=True, on_delete=models.CASCADE)
+    ordinality = models.IntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["relation", "ordinality"], name="unique_ordinality_rel")
+        ]
+
+
+class OsmXmlImport(models.Model):
+    """
+    Saving this table triggers (in Postgres) the building or
+    rebuilding of nodes, ways and relations
+    """
+    data = models.TextField()

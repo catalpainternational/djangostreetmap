@@ -1,19 +1,19 @@
 import logging
 import os
+from functools import cached_property
 from pathlib import Path
 
 import requests_mock
 from django.test import TestCase
 
+from djangostreetmap import overpass_parse
 from djangostreetmap.tilegenerator import MvtQuery, Tile
 
 from .models import OsmBoundary, OverpassQuery
-from djangostreetmap import overpass_parse
-
-from functools import cached_property
 
 logger = logging.getLogger(__name__)
 import xml.etree.ElementTree as ET
+
 
 class TestJsonImport(TestCase):
     def setUp(self):
@@ -45,6 +45,7 @@ class TestBoundaryImport(TestCase):
                 m.get(self.url, content=f.read())
             OsmBoundary.objects.create_from_url(url=self.url)
 
+
 class TestCompileMvt(TestCase):
     """
     Checks that the MVT tile functions return valid SQL
@@ -52,21 +53,22 @@ class TestCompileMvt(TestCase):
 
     def test_table(self):
         q = MvtQuery(table=OsmBoundary._meta.db_table, layer="admin_boundary")
-        q.execute(Tile(0,0,0))
+        q.execute(Tile(0, 0, 0))
 
     def test_model(self):
         q = MvtQuery(model=OsmBoundary, layer="admin_boundary")
-        q.execute(Tile(0,0,0))
+        q.execute(Tile(0, 0, 0))
 
     def test_query(self):
         q = MvtQuery(queryset=OsmBoundary.objects.all(), layer="admin_boundary")
-        q.execute(Tile(0,0,0))
+        q.execute(Tile(0, 0, 0))
+
 
 class TestOverpassParse(TestCase):
-
     def setUp(self):
         self.node = ET.fromstring('<nd ref="2599693103" lat="-8.5534587" lon="125.5272207"/>')
-        self.way = ET.fromstring('''
+        self.way = ET.fromstring(
+            """
         <way id="24226453">
             <bounds minlat="-8.5535768" minlon="125.5266671" maxlat="-8.5529642" maxlon="125.5272851"/>
             <nd ref="2599693103" lat="-8.5534587" lon="125.5272207"/>
@@ -74,30 +76,31 @@ class TestOverpassParse(TestCase):
             <tag k="highway" v="primary"/>
             <tag k="junction" v="roundabout"/>
         </way>
-        ''')
+        """
+        )
         self.url = "https://overpass-api.de/api/interpreter"
         self.file_ = Path(os.path.abspath(__file__)).parent.parent / "tests" / "rotunda.xml"
-        self.query = b'''
+        self.query = b"""
             area["ISO3166-1"="TL"]->.Country_area;
             way[highway="primary"][name="Rotunda Nicolau Lobato"](area.Country_area);
             out geom;
-            '''
+            """
 
         # This has an accent in it
-        self.centro_saude = '''
+        self.centro_saude = """
             area["ISO3166-1"="TL"]->.Country_area;
             node[healthcare][name="Centtro de Saúde Betano"](area.Country_area);
             out geom;
-            '''.encode()
+            """.encode()
         self.file_health_center = Path(os.path.abspath(__file__)).parent.parent / "tests" / "health.xml"
 
         # This query is for waterways
 
-        self.ww_query = '''
+        self.ww_query = """
         area["ISO3166-1"="TL"]->.Country_area;
         rel[waterway](area.Country_area);
         out geom;
-        '''
+        """
         self.file_relation = Path(os.path.abspath(__file__)).parent.parent / "tests" / "relation.xml"
 
     def test_geometry_build(self):
@@ -116,7 +119,7 @@ class TestOverpassParse(TestCase):
         with requests_mock.Mocker() as m:
             with open(self.file_, "rb") as f:
                 m.post(self.url, content=f.read())
-            q = overpass_parse.Query(query = self.query)
+            q = overpass_parse.Query(query=self.query)
 
             self.assertIsNone(q.osm_element)
             q.ensure_element()
@@ -129,7 +132,7 @@ class TestOverpassParse(TestCase):
         with requests_mock.Mocker() as m:
             with open(self.file_health_center, "rb") as f:
                 m.post(self.url, content=f.read())
-            q = overpass_parse.Query(query = self.centro_saude)
+            q = overpass_parse.Query(query=self.centro_saude)
 
             self.assertIsNone(q.osm_element)
             q.ensure_element()
@@ -141,7 +144,7 @@ class TestOverpassParse(TestCase):
         with requests_mock.Mocker() as m:
             with open(self.file_relation, "rb") as f:
                 m.post(self.url, content=f.read())
-            q = overpass_parse.Query(query = self.ww_query)
+            q = overpass_parse.Query(query=self.ww_query)
 
             self.assertIsNone(q.osm_element)
 

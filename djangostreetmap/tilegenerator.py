@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
+
 from django.db import connection
 from django.db.models.base import Model
-
 from django.db.models.query import QuerySet
 
 PgFunction = str
@@ -54,7 +54,7 @@ class MvtQuery:
     """
 
     table: Optional[str] = None
-    model:Optional[Model] = None
+    model: Optional[Model] = None
     queryset: Optional[QuerySet] = None
     attributes: List[str] = field(default_factory=list)
     attribute_map: Dict[str, str] = field(default_factory=dict)
@@ -106,7 +106,6 @@ class MvtQuery:
         if self.model:
             return self.model._meta.db_table
 
-
         if isinstance(self.queryset, QuerySet):
             query, params = self.queryset.query.sql_with_params()
             with connection.cursor() as c:
@@ -114,11 +113,10 @@ class MvtQuery:
 
                 # Workaround - Django casts geom to bytea which horribly impacts performance
                 # See The `PostGISOperations` class for the place where this occurs
-                query = query.replace('::bytea', '')
+                query = query.replace("::bytea", "")
                 c.mogrify(query, params).decode()
 
                 return "(%s) AS queryset" % (c.mogrify(query, params).decode(),)
-
 
     def as_mvtgeom(self, tile: Tile) -> PgFunction:
         where = [f"{self.transformed_geom} && {tile.tile_envelope_margin}"]
@@ -143,11 +141,11 @@ class MvtQuery:
             raise OutOfZoomRangeException
         return f"WITH {self.alias} AS (SELECT {self.as_mvtgeom(tile)}) SELECT ST_AsMVT({self.alias}.*, '{self.layer}', {tile.extent}, 'geom', '{self.pk}') FROM {self.alias}"
 
-    def execute(self, tile:Tile):
+    def execute(self, tile: Tile):
         with connection.cursor() as c:
             try:
                 c.execute(self.as_mvt(tile))
             except OutOfZoomRangeException:
-                return b''
+                return b""
             tile_response = c.fetchone()
             return tile_response
