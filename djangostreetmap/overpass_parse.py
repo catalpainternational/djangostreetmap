@@ -1,19 +1,22 @@
-from typing import Dict, List, NamedTuple, Optional, TypeVar, TypedDict, Tuple, Union
+import warnings
 import xml.etree.ElementTree as ET
-import requests
-from django.contrib.gis.geos import Point, LineString
-from dataclasses import Field, dataclass
+from dataclasses import dataclass
 from time import sleep
+from typing import Dict, List, Optional, Union
+
+import requests
+from django.contrib.gis.geos import LineString, Point
+
 
 class Utils:
-
     @staticmethod
     def tags(el: ET.Element):
-        return {tag.attrib['k']: tag.attrib['v'] for tag in el.findall('tag')}
+        return {tag.attrib["k"]: tag.attrib["v"] for tag in el.findall("tag")}
 
     @staticmethod
-    def nodetopoint(node:ET.Element) -> Point:
-        return Point(float(node.attrib["lat"]), float(node.attrib["lon"]), srid=4326),
+    def nodetopoint(node: ET.Element) -> Point:
+        return (Point(float(node.attrib["lat"]), float(node.attrib["lon"]), srid=4326),)
+
 
 @dataclass
 class Query:
@@ -27,7 +30,7 @@ class Query:
     _relations: Optional[Dict[int, "Relation"]] = None
     _is_closed: Optional[bool] = None
 
-    def get(self, server = "https://overpass-api.de/api/interpreter"):
+    def get(self, server="https://overpass-api.de/api/interpreter"):
         data = dict(data=self.query)
         # This could take some time
         response = requests.post(server, data)
@@ -40,6 +43,7 @@ class Query:
             try:
                 self.get()
             except Exception as E:
+                warnings.warn(f'{E}')
                 sleep(5)
 
     @property
@@ -73,6 +77,7 @@ class Query:
         self._is_closed = self.nodes[0].id == self.nodes[-1].id
         return self.is_closed
 
+
 @dataclass
 class Node:
     id: int
@@ -85,14 +90,10 @@ class Node:
 
     @classmethod
     def from_element(cls: "Node", node: ET.Element) -> "Node":
-        return cls(
-            id = node.attrib['id'],
-            lon = node.attrib['lon'],
-            lat = node.attrib['lat'],
-            tags = Utils.tags(node)
-        )
+        return cls(id=node.attrib["id"], lon=node.attrib["lon"], lat=node.attrib["lat"], tags=Utils.tags(node))
+
     @classmethod
-    def from_parent_element(cls: "Node", parent: ET.Element, tag: str = 'node') -> List["Node"]:
+    def from_parent_element(cls: "Node", parent: ET.Element, tag: str = "node") -> List["Node"]:
         return [cls.from_element(node) for node in parent.findall(tag)]
 
     @property
@@ -123,13 +124,14 @@ class Nd:
     @classmethod
     def from_element(cls: "Nd", nd: ET.Element) -> "Nd":
         return cls(
-            ref = nd.attrib['ref'],
+            ref=nd.attrib["ref"],
             # lon and lat may be provided inline or as a reference to another Node
-            lon = nd.attrib.get('lon', None),
-            lat = nd.attrib.get('lat', None),
+            lon=nd.attrib.get("lon", None),
+            lat=nd.attrib.get("lat", None),
         )
+
     @classmethod
-    def from_parent_element(cls: "Nd", parent: ET.Element, tag: str = 'nd') -> List["Nd"]:
+    def from_parent_element(cls: "Nd", parent: ET.Element, tag: str = "nd") -> List["Nd"]:
         return [cls.from_element(nd) for nd in parent.findall(tag)]
 
     @property
@@ -154,31 +156,29 @@ class Way:
     @classmethod
     def from_element(cls: "Way", way: ET.Element) -> "Way":
         return Way(
-            id = way.attrib['id'],
-            nodes = Nd.from_parent_element(way),
-            tags = Utils.tags(way),
+            id=way.attrib["id"],
+            nodes=Nd.from_parent_element(way),
+            tags=Utils.tags(way),
         )
 
     @classmethod
-    def from_parent_element(cls: "Way", parent: ET.Element, tag: str = 'way') -> List["Way"]:
+    def from_parent_element(cls: "Way", parent: ET.Element, tag: str = "way") -> List["Way"]:
         return [cls.from_element(node) for node in parent.findall(tag)]
+
 
 @dataclass
 class Member:
     """
     Represents a node or way which is part of a Relation
     """
+
     type: str  # "node" or "way"
     ref: int  # This is essentially a "foreign key" to a Way or Node
     role: str
 
     @classmethod
     def from_element(cls, member: ET.Element):
-        return cls(
-            type=member.attrib["type"],
-            ref=int(member.attrib["ref"]),
-            role=member.attrib["role"]
-        )
+        return cls(type=member.attrib["type"], ref=int(member.attrib["ref"]), role=member.attrib["role"])
 
 
 @dataclass
@@ -186,6 +186,7 @@ class Relation:
     """
     Represents a "relation" tag from overpass
     """
+
     id: int
 
     members: List[Union[Way, Node]]
@@ -194,26 +195,25 @@ class Relation:
     @classmethod
     def from_element(cls: "Relation", relation: ET.Element) -> "Relation":
         return Relation(
-            id = relation.attrib['id'],
-            members = list(Relation.get_members(relation)),
-            tags = Utils.tags(relation),
+            id=relation.attrib["id"],
+            members=list(Relation.get_members(relation)),
+            tags=Utils.tags(relation),
         )
 
     @classmethod
-    def from_parent_element(cls: "Relation", parent: ET.Element, tag: str = 'relation') -> Dict[int, "Relation"]:
+    def from_parent_element(cls: "Relation", parent: ET.Element, tag: str = "relation") -> Dict[int, "Relation"]:
         return {rel.id: rel for rel in [cls.from_element(node) for node in parent.findall(tag)]}
 
     @staticmethod
     def get_members(relation: ET.Element):
         return (Member.from_element(element) for element in relation.iter(tag="member"))
 
-def parse_osm_element(osm: ET.Element) -> List[Node]:
-    return [
-        Node.from_parent_element(osm),
-        Way.from_parent_element(osm)
-    ]
 
-def response_to_geometries(query:bytes):
+def parse_osm_element(osm: ET.Element) -> List[Node]:
+    return [Node.from_parent_element(osm), Way.from_parent_element(osm)]
+
+
+def response_to_geometries(query: bytes):
 
     # Fetch the query from an overpass server
     server = "https://overpass-api.de/api/interpreter"

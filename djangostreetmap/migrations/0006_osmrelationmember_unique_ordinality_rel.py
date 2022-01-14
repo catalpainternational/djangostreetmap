@@ -6,12 +6,12 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('djangostreetmap', '0005_osmrelationmember_relation'),
+        ("djangostreetmap", "0005_osmrelationmember_relation"),
     ]
 
     operations = [
         migrations.AddConstraint(
-            model_name='osmrelationmember',
-            constraint=models.UniqueConstraint(fields=('relation', 'ordinality'), name='unique_ordinality_rel'),
+            model_name="osmrelationmember",
+            constraint=models.UniqueConstraint(fields=("relation", "ordinality"), name="unique_ordinality_rel"),
         ),
     ]

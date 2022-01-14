@@ -1,11 +1,8 @@
 from django.contrib.gis import admin
 
-from .models import (
-    OsmHighway,
-    OsmIslands,
-    OverpassQuery,
-    OverpassResult,
-)
+from .models import OsmHighway, OsmIslands, OverpassQuery, OverpassResult
+
+
 @admin.register(OsmHighway)
 class OsmHighwayAdmin(admin.ModelAdmin):
     list_display = ["name", "highway"]

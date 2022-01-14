@@ -1,7 +1,6 @@
 from typing import List
 
 from django.core.serializers import serialize
-from django.db import connection
 from django.http.response import HttpResponse
 from django.views import View
 from django.views.generic.base import TemplateView
@@ -14,7 +13,7 @@ from .models import (
     OsmIslandsAreas,
     OverpassResult,
 )
-from .tilegenerator import MvtQuery, OutOfZoomRangeException, Tile
+from .tilegenerator import MvtQuery, Tile
 
 
 class ExampleMapView(TemplateView):
@@ -47,13 +46,12 @@ class TileLayerView(View):
         return self.layers
 
     def _generate_tile(self, tile: Tile) -> bytes:
-        with connection.cursor() as cursor:
-            tiles = b""
-            for layer in self.get_layers(tile):
-                tile_response = layer.execute(tile)
-                if tile_response:
-                    tiles += tile_response[0]
-            return tiles
+        tiles = b""
+        for layer in self.get_layers(tile):
+            tile_response = layer.execute(tile)
+            if tile_response:
+                tiles += tile_response[0]
+        return tiles
 
     def get(self, request, *args, **kwargs):
         tile = Tile(**kwargs)  # Expect to receive zoom, x, and y in kwargs

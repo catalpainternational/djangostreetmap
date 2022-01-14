@@ -7,20 +7,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('djangostreetmap', '0001_squashed_0013_osmboundary'),
+        ("djangostreetmap", "0001_squashed_0013_osmboundary"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='OsmAdminBoundary',
+            name="OsmAdminBoundary",
         ),
         migrations.AlterField(
-            model_name='overpassquery',
-            name='name',
+            model_name="overpassquery",
+            name="name",
             field=models.CharField(max_length=256),
         ),
         migrations.AddIndex(
-            model_name='overpassresult',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['tags'], name='djangostree_tags_2bf4c7_gin'),
+            model_name="overpassresult",
+            index=django.contrib.postgres.indexes.GinIndex(fields=["tags"], name="djangostree_tags_2bf4c7_gin"),
         ),
     ]

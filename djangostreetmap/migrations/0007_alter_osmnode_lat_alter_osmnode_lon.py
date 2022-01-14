@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('djangostreetmap', '0006_osmrelationmember_unique_ordinality_rel'),
+        ("djangostreetmap", "0006_osmrelationmember_unique_ordinality_rel"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='osmnode',
-            name='lat',
+            model_name="osmnode",
+            name="lat",
             field=models.FloatField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='osmnode',
-            name='lon',
+            model_name="osmnode",
+            name="lon",
             field=models.FloatField(blank=True, null=True),
         ),
     ]

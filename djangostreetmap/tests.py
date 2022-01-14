@@ -1,25 +1,25 @@
 import logging
 import os
-from functools import cached_property
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import requests_mock
+from django.core.management import call_command
 from django.test import TestCase
 
 from djangostreetmap import overpass_parse
 from djangostreetmap.tilegenerator import MvtQuery, Tile
 
-from .models import OsmBoundary, OverpassQuery
+from .models import OsmBoundary, OsmXmlImport, OverpassQuery
 
 logger = logging.getLogger(__name__)
-import xml.etree.ElementTree as ET
 
 
 class TestJsonImport(TestCase):
     def setUp(self):
 
         self.url = "https://overpass-api.de/api/interpreter"
-        self.file_ = Path(os.path.abspath(__file__)).parent / "pg_health.json"
+        self.file_ = Path(os.path.abspath(__file__)).parent.parent / "tests" / "pg_health.json"
 
         self.ql = OverpassQuery(query="""[out:json];area["ISO3166-1"="PG"];node[healthcare](area);convert item ::=::,::geom=geom(),_osm_type=type();out geom;""")
         self.ql.save()
@@ -36,7 +36,7 @@ class TestJsonImport(TestCase):
 class TestBoundaryImport(TestCase):
     def setUp(self):
         self.url = "https://osm-boundaries.com/Download/Submit?apiKey=9621eb9d61d9727a2cc47493e8f3e740&db=osm20211206&osmIds=-305142&recursive&format=GeoJSON&srid=4326&landOnly&includeAllTags"
-        self.file_ = Path(os.path.abspath(__file__)).parent / "OSMB-72e3130e61dc3b2bad3915658f9b32f1ac1d3bbe.geojson.gz"
+        self.file_ = Path(os.path.abspath(__file__)).parent.parent / "tests" / "OSMB-72e3130e61dc3b2bad3915658f9b32f1ac1d3bbe.geojson.gz"
 
     def test_from_url(self):
 
@@ -151,3 +151,15 @@ class TestOverpassParse(TestCase):
             q.ensure_element()
 
             q.relations
+
+
+class OsmXmlImportTestCase(TestCase):
+    def setUp(self) -> None:
+        call_command("import_scripts")
+        return super().setUp()
+
+    def test_osmimport_query(self):
+
+        file_relation = Path(os.path.abspath(__file__)).parent.parent / "tests" / "relation.xml"
+        with open(file_relation, "rb") as f:
+            OsmXmlImport.objects.create(data=f.read().decode())
