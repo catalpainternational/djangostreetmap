@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="Overpass API 0.7.57 93a4d346">
+<note>The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.</note>
+<meta osm_base="2022-01-13T04:11:09Z" areas="2022-01-12T06:01:39Z"/>
+
+  <node id="1777614914" lat="-9.1645128" lon="125.7294736">
+    <tag k="amenity" v="hospital"/>
+    <tag k="healthcare" v="hospital"/>
+    <tag k="name" v="Centtro de Saúde Betano"/>
+    <tag k="source" v="ICIST/GERTiL"/>
+  </node>
+
+</osm>

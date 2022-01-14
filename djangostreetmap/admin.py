@@ -1,6 +1,12 @@
-from django.contrib import admin
+from django.contrib.gis import admin
 
-from .models import OsmAdminBoundary, OsmHighway, OsmIslands
+from .models import (
+    OsmAdminBoundary,
+    OsmHighway,
+    OsmIslands,
+    OverpassQuery,
+    OverpassResult,
+)
 
 # Register your models here.
 
@@ -33,3 +39,16 @@ class OsmIslandsAdmin(admin.ModelAdmin):
 @admin.register(OsmAdminBoundary)
 class OsmAdminBoundaryAdmin(admin.ModelAdmin):
     list_display = ["name"]
+
+
+class OverpassResultInline(admin.TabularInline):
+    model = OverpassResult
+
+
+@admin.register(OverpassQuery)
+class OverpassQueryAdmin(admin.ModelAdmin):
+    # inlines = [OverpassResultInline]
+    ...
+
+
+admin.site.register(OverpassResult, admin.OSMGeoAdmin)

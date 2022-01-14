@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="Overpass API 0.7.57.1 74a55df1">
+<note>The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.</note>
+<meta osm_base="2022-01-13T08:23:55Z" areas="2022-01-13T08:05:30Z"/>
+
+  <relation id="2245007">
+    <member type="way" ref="168467708" role="main_stream"/>
+    <member type="way" ref="168467705" role="main_stream"/>
+    <member type="way" ref="168467707" role="main_stream"/>
+    <member type="way" ref="168467709" role="main_stream"/>
+    <member type="way" ref="854492146" role="main_stream"/>
+    <member type="way" ref="168467694" role="main_stream"/>
+    <tag k="name" v="Linha de água"/>
+    <tag k="type" v="waterway"/>
+    <tag k="waterway" v="stream"/>
+  </relation>
+
+</osm>

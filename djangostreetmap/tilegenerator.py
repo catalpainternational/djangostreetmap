@@ -1,5 +1,9 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Dict, List, Optional
+from django.db import connection
+from django.db.models.base import Model
+
+from django.db.models.query import QuerySet
 
 PgFunction = str
 
@@ -49,8 +53,11 @@ class MvtQuery:
     at https://postgis.net/docs/manual-dev/ST_AsMVT.html
     """
 
-    table: str
+    table: Optional[str] = None
+    model:Optional[Model] = None
+    queryset: Optional[QuerySet] = None
     attributes: List[str] = field(default_factory=list)
+    attribute_map: Dict[str, str] = field(default_factory=dict)
     filters: List[str] = field(default_factory=list)
     transform: bool = False  # Set to True if source srid is not 3857, but beware performanc
     field: str = "geom"
@@ -68,8 +75,10 @@ class MvtQuery:
         statements = []
         for attr in self.attributes:
             statements.extend([f"'{attr}'", f'"{attr}"'])
+        for attr_k, attr_v in self.attribute_map.items():
+            statements.extend([f"'{attr_k}'", f"{attr_v}"])
         joined = ", ".join(statements)
-        return f" jsonb_build_object({joined}) " if self.attributes else ""
+        return f", jsonb_build_object({joined}) " if self.attributes or self.attribute_map else ""
 
     @property
     def transformed_geom(self) -> PgFunction:
@@ -88,6 +97,29 @@ class MvtQuery:
         """
         return f"mvt_{self.layer}"
 
+    @property
+    def table_or_queryset(self):
+
+        if self.table:
+            return self.table
+
+        if self.model:
+            return self.model._meta.db_table
+
+
+        if isinstance(self.queryset, QuerySet):
+            query, params = self.queryset.query.sql_with_params()
+            with connection.cursor() as c:
+                # Wrap the queryset in a cursor
+
+                # Workaround - Django casts geom to bytea which horribly impacts performance
+                # See The `PostGISOperations` class for the place where this occurs
+                query = query.replace('::bytea', '')
+                c.mogrify(query, params).decode()
+
+                return "(%s) AS queryset" % (c.mogrify(query, params).decode(),)
+
+
     def as_mvtgeom(self, tile: Tile) -> PgFunction:
         where = [f"{self.transformed_geom} && {tile.tile_envelope_margin}"]
         where.extend(self.filters)
@@ -99,8 +131,8 @@ class MvtQuery:
               {tile.tile_envelope},
               extent => {tile.extent},
               buffer => {tile.buffer}
-        ) AS geom, "{self.pk}", {self.json_attributes}
-          FROM {self.table}
+        ) AS geom, "{self.pk}" {self.json_attributes}
+          FROM {self.table_or_queryset}
           WHERE {where_clause}
         """
 
@@ -110,3 +142,12 @@ class MvtQuery:
         if self.max_render_zoom and tile.zoom > self.max_render_zoom:
             raise OutOfZoomRangeException
         return f"WITH {self.alias} AS (SELECT {self.as_mvtgeom(tile)}) SELECT ST_AsMVT({self.alias}.*, '{self.layer}', {tile.extent}, 'geom', '{self.pk}') FROM {self.alias}"
+
+    def execute(self, tile:Tile):
+        with connection.cursor() as c:
+            try:
+                c.execute(self.as_mvt(tile))
+            except OutOfZoomRangeException:
+                return b''
+            tile_response = c.fetchone()
+            return tile_response

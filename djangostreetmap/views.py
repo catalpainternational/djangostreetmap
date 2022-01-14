@@ -8,7 +8,7 @@ from django.views.generic.base import TemplateView
 
 from .models import (
     FacebookAiRoad,
-    OsmAdminBoundary,
+    OsmBoundary,
     OsmHighway,
     OsmIslands,
     OsmIslandsAreas,
@@ -50,12 +50,7 @@ class TileLayerView(View):
         with connection.cursor() as cursor:
             tiles = b""
             for layer in self.get_layers(tile):
-                try:
-                    query = layer.as_mvt(tile)
-                except OutOfZoomRangeException:
-                    continue
-                cursor.execute(query)
-                tile_response = cursor.fetchone()
+                tile_response = layer.execute(tile)
                 if tile_response:
                     tiles += tile_response[0]
             return tiles
@@ -70,18 +65,18 @@ class RoadLayerView(TileLayerView):
     def get_layers(self, tile: Tile):
         layers = []
         for road_class, min_zoom in [
-            # ("steps", 5),
-            # ("bus_guideway", 5),
-            # ("footway", 5),
-            # ("services", 5),
-            ("trunk", 3),
+            ("steps", 5),
+            ("bus_guideway", 5),
+            ("footway", 5),
+            ("services", 5),
+            ("trunk", 1),
             ("road", 12),
             ("secondary", 5),
-            ("trunk_link", 3),
+            ("trunk_link", 1),
             ("tertiary", 10),
             ("secondary_link", 5),
             ("tertiary_link", 10),
-            ("primary", 3),
+            ("primary", 1),
             ("residential", 12),
             ("primary_link", 12),
             ("track", 12),
@@ -91,20 +86,14 @@ class RoadLayerView(TileLayerView):
         ]:
             layers.append(
                 MvtQuery(
-                    table=OsmHighway._meta.db_table,
-                    attributes=["name", "highway"],
-                    filters=[f"\"highway\"='{road_class}'"],
+                    queryset=OverpassResult.objects.filter(tags__highway=road_class),
+                    attribute_map={"name": "tags->'name'", "highway": "tags->'highway'"},
                     layer=road_class,
                     min_render_zoom=min_zoom,
                     transform=False,
                 )
             )
         return layers
-
-
-class AdminBoundaryLayerView(TileLayerView):
-    layers = [MvtQuery(table=OsmAdminBoundary._meta.db_table, attributes=["name"], layer="admin_boundary")]
-
 
 class IslandsLayerView(TileLayerView):
     layers = [MvtQuery(table=OsmIslands._meta.db_table, attributes=["name"], layer="islands")]
@@ -122,14 +111,26 @@ class OverpassView(TileLayerView):
     layers = [
         MvtQuery(
             table=OverpassResult._meta.db_table,
-            # filters=["tag -> 'healthcare' IS NOT NULL"]
-            attributes=["tags"],
+            attribute_map={
+                "highway": """"tags" -> 'highway' """,
+                "name": '''"tags" -> 'name' ''',
+            },
             layer="overpass",
+        )
+    ]
+
+
+class AdminBoundaryView(TileLayerView):
+    layers = [
+        MvtQuery(
+            table=OsmBoundary._meta.db_table,
+            attribute_map={"name": "tags->'name'"},
+            layer="boundaries",
         )
     ]
 
 
 class OverpassJSONView(TemplateView):
     def get(self, request, *args, **kwargs):
-        content = serialize("geojson", OverpassResult.objects.all(), geometry_field="geom", fields=("name",))
+        content = serialize("geojson", OverpassResult.objects.all(), geometry_field="geom", fields=("name", "tags", "id"))
         return HttpResponse(content=content, content_type="application/json")
