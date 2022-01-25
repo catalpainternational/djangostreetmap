@@ -18,11 +18,48 @@
         <script>
             var mymap = L.map("mapid").setView({{map_view}});
 
+            fetch("{% url 'djangostreetmap:hospitals' %}").then( (data) => data.json()).then( (json_data) => L.geoJSON(json_data, {onEachFeature: (feature, layer) => {
+                debugger;
+                var popupContent = `
+            <b>${feature.properties.name}</b>
+            ${feature.properties.osm_type}
+            ${feature.properties.address}
+            `;
+
+		if (feature.properties && feature.properties.popupContent) {
+			popupContent += feature.properties.popupContent;
+		}
+
+
+		layer.bindPopup(popupContent);}
+	}).addTo(mymap));
+
+            /* Add an openlayers */
+
+            // Data provider
+            const osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+            const osmAttrib = 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors';
+
+            // Layer
+            const osmLayer = new L.TileLayer(osmUrl, {
+                minZoom: 4,
+                maxZoom: 20,
+                attribution: osmAttrib
+            }).addTo(mymap);
+
+
+            const building_opts = {
+                // interactive: true,
+                vectorTileLayerStyles: {
+                    buildings: {weight: 0.5, color: "gray"},
+                }
+            }
+
             const road_opts = {
-                interactive: true,
+                // interactive: true,
                 vectorTileLayerStyles: {
                     trunk: {weight: 2, color: "red"},
-                    road: {weight: 1, color: "white"},
+                    roads: {weight: 2, color: "red"},
                     secondary: function(properties, zoom){
                         const c = '#f7fabf';
                         if (zoom < 6){ return {weight: 1, color: c} };
@@ -87,27 +124,38 @@
                     }
                 }
             };
-            const islands = L.vectorGrid.protobuf("{% url 'djangostreetmap:islands' %}{z}/{x}/{y}.pbf", opts).on("mouseover", function (e) {
-                    L.popup()
-                        .setContent(e.layer.properties.name || e.layer.properties.type)
-                        .setLatLng(e.latlng)
-                        .openOn(mymap);
-                    L.DomEvent.stop(e);
-                }).addTo(mymap);
+            // const islands = L.vectorGrid.protobuf("{% url 'djangostreetmap:islands' %}{z}/{x}/{y}.pbf", opts).on("mouseover", function (e) {
+            //         L.popup()
+            //             .setContent(e.layer.properties.name || e.layer.properties.type)
+            //             .setLatLng(e.latlng)
+            //             .openOn(mymap);
+            //         L.DomEvent.stop(e);
+            //     }).addTo(mymap);
 
-            const adm = L.vectorGrid
-                .protobuf("{% url 'djangostreetmap:admin' %}{z}/{x}/{y}.pbf", opts)
-                .on("mouseover", function (e) {
-                    L.popup()
-                        .setContent(e.layer.properties.name || e.layer.properties.type)
-                        .setLatLng(e.latlng)
-                        .openOn(mymap);
-                    L.DomEvent.stop(e);
-                })
-                .addTo(mymap);
+            // const adm = L.vectorGrid
+            //     .protobuf("{% url 'djangostreetmap:admin' %}{z}/{x}/{y}.pbf", opts)
+            //     .on("mouseover", function (e) {
+            //         L.popup()
+            //             .setContent(e.layer.properties.name || e.layer.properties.type)
+            //             .setLatLng(e.latlng)
+            //             .openOn(mymap);
+            //         L.DomEvent.stop(e);
+            //     })
+            //     .addTo(mymap);
 
-            const highways = L.vectorGrid
-                .protobuf("{% url 'djangostreetmap:highways' %}{z}/{x}/{y}.pbf", road_opts)
+            // const highways = L.vectorGrid
+            //     .protobuf("{% url 'djangostreetmap:highways' %}{z}/{x}/{y}.pbf", road_opts)
+            //     .on("mouseover", function (e) {
+            //         L.popup()
+            //             .setContent(`Name: ${e.layer.properties.name}, type: ${e.layer.properties.highway}`)
+            //             .setLatLng(e.latlng)
+            //             .openOn(mymap);
+            //         L.DomEvent.stop(e);
+            //     })
+            //     .addTo(mymap);
+
+                const buildings = L.vectorGrid
+                .protobuf("{% url 'djangostreetmap:buildings' %}{z}/{x}/{y}.pbf", building_opts)
                 .on("mouseover", function (e) {
                     L.popup()
                         .setContent(`Name: ${e.layer.properties.name}, type: ${e.layer.properties.highway}`)
@@ -116,6 +164,27 @@
                     L.DomEvent.stop(e);
                 })
                 .addTo(mymap);
+
+
+                const roads = L.vectorGrid
+                .protobuf("{% url 'djangostreetmap:roads' %}{z}/{x}/{y}.pbf", road_opts)
+                .on("mouseover", function (e) {
+                    L.popup()
+                        .setContent(`Name: ${e.layer.properties.name}, type: ${e.layer.properties.osm_type}`)
+                        .setLatLng(e.latlng)
+                        .openOn(mymap);
+                    L.DomEvent.stop(e);
+                })
+                .addTo(mymap);
+
+                baseMaps = {}
+                overlayMaps = {"OSM": osmLayer, "buildings": buildings, "roads": roads}
+
+                L.control.layers(baseMaps, overlayMaps).addTo(mymap);
+
+
+                // Add hospitals
+
         </script>
     </body>
 </html>

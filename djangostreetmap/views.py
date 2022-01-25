@@ -1,9 +1,12 @@
 from typing import List
+from django.apps import apps
 
 from django.db import connection
+from django.http import JsonResponse
 from django.http.response import HttpResponse
 from django.views import View
 from django.views.generic.base import TemplateView
+from django.core.serializers import serialize
 
 from .models import (
     FacebookAiRoad,
@@ -20,13 +23,7 @@ class ExampleMapView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # The initial map view
-        highway_centroid = OsmHighway.objects.first().geom.centroid
-        highway_centroid.transform(4326)
-        zoom = 5
-
-        context["map_view"] = f"[{highway_centroid.y}, {highway_centroid.x}], {zoom}"
+        context["map_view"] = f"[-8.556416, 125.5524171], 14"
         return context
 
 
@@ -114,3 +111,20 @@ class IslandsAreaLayerView(TileLayerView):
 
 class FacebookAiLayerView(TileLayerView):
     layers = [MvtQuery(table=FacebookAiRoad._meta.db_table, attributes=["highway"], layer="facebookai")]
+
+class BuildingPolygon(TileLayerView):
+    layers = [MvtQuery(table="osmflex_buildingpolygon", attributes=["name", "osm_id", "osm_subtype"], layer="buildings", pk="osm_id")]
+
+class MajorRoads(TileLayerView):
+    layers = [MvtQuery(table="osmflex_roadmajor", attributes=["name", "osm_type"], layer="roads", pk="osm_id")]
+
+class Hospitals(View):
+
+    def get(self, request, *args, **kwargs):
+        model = apps.get_model("osmflex", "AmenityPoint")
+        query = model.objects.filter(osm_type__in=["hospital", "clinic"])
+
+        content = serialize('geojson', query,
+          geometry_field='geom',
+          fields=('name','address', 'osm_type', 'osm_id'))
+        return HttpResponse(content=content, content_type="application/json")

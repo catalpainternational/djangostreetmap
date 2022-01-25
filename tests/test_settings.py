@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.gis",
     "djangostreetmap",
+    "osmflex",
     "tests",
 ]
 
@@ -81,9 +82,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
         "USER": "postgres",
-        "PASSWORD": "post1233",
+        "PASSWORD": "post1234",
         "HOST": "localhost",
-        "PORT": "49159",
+        "PORT": "49154",
         "NAME": "postgres",
     }
 }
@@ -127,3 +128,10 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/tmp/django_cache',
+    }
+}
