@@ -17,13 +17,14 @@ exclude = '''
 
 [tool.poetry]
 name = "djangostreetmap"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Joshua Brooks <josh.vdbroek@gmail.com>"]
 license = "GPLv3"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
+osmflex = "^0.1.2"
 
 [tool.poetry.dev-dependencies]
 Django = "^4.0.1"
