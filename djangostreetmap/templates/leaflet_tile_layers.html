@@ -16,36 +16,42 @@
     <body>
         <div id="mapid" style="width: 1800px; height: 1000px; background:#aad3df"></div>
         <script>
-            var mymap = L.map("mapid").setView({{map_view}});
+            const mymap = L.map("mapid").setView({{map_view}});
 
-            fetch("{% url 'djangostreetmap:hospitals' %}").then( (data) => data.json()).then( (json_data) => L.geoJSON(json_data, {onEachFeature: (feature, layer) => {
-                debugger;
-                var popupContent = `
-            <b>${feature.properties.name}</b>
-            ${feature.properties.osm_type}
-            ${feature.properties.address}
-            `;
+            function getHospitals(){
+                const onEachFeature = (feature, layer) => {
+                    layer.bindPopup(`<b>${feature.properties.name}</b> ${feature.properties.osm_type}`);
+                }
+                const layer = fetch("{% url 'djangostreetmap:hospitals' %}")
+                    .then(response => response.json())
+                    .then(data => L.geoJSON(data, {onEachFeature:onEachFeature}))
+                return layer
+            }
+            function getAeroways(){
+                const onEachFeature = (feature, layer) => {
+                    layer.bindPopup(`<b>${feature.properties.name}</b> ${feature.properties.osm_type}`);
+                }
+                const layer = fetch("{% url 'djangostreetmap:aeroways' %}")
+                    .then(response => response.json())
+                    .then(data => L.geoJSON(data, {onEachFeature:onEachFeature}))
+                return layer
+            }
 
-		if (feature.properties && feature.properties.popupContent) {
-			popupContent += feature.properties.popupContent;
-		}
+            function getOsm(){
+                const osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                const osmAttrib = 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors';
 
-
-		layer.bindPopup(popupContent);}
-	}).addTo(mymap));
+                // Layer
+                return new L.TileLayer(osmUrl, {
+                    minZoom: 4,
+                    maxZoom: 20,
+                    attribution: osmAttrib
+                });
+            }
 
             /* Add an openlayers */
 
             // Data provider
-            const osmUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-            const osmAttrib = 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors';
-
-            // Layer
-            const osmLayer = new L.TileLayer(osmUrl, {
-                minZoom: 4,
-                maxZoom: 20,
-                attribution: osmAttrib
-            }).addTo(mymap);
 
 
             const building_opts = {
@@ -178,13 +184,14 @@
                 .addTo(mymap);
 
                 baseMaps = {}
-                overlayMaps = {"OSM": osmLayer, "buildings": buildings, "roads": roads}
 
-                L.control.layers(baseMaps, overlayMaps).addTo(mymap);
-
-
-                // Add hospitals
-
+                const control = L.control.layers();
+                control.addTo(mymap);
+                const osmLayer = getOsm();
+                osmLayer.addTo(mymap);
+                control.addOverlay(osmLayer, 'OpenStreetMap');
+                getHospitals().then((l) => {l.addTo(mymap); control.addOverlay(l, 'hospitals')} )
+                getAeroways().then((l) => {l.addTo(mymap); control.addOverlay(l, 'aeroways')} )
         </script>
     </body>
 </html>

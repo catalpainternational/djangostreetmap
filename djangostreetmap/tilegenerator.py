@@ -1,17 +1,13 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from itertools import chain
+from typing import List, Optional, Sequence
 
 PgFunction = str
+from psycopg2 import sql
+from psycopg2.sql import Literal as L, Identifier as I
 
-
-class OutOfZoomRangeException(Exception):
-    """
-    Raised when a renderer layer receives
-    a tile outside of its zoom range settings
-    """
-
-    pass
-
+from operator import add
+from functools import reduce
 
 @dataclass
 class Tile:
@@ -27,19 +23,14 @@ class Tile:
     y: int
     buffer: int = 64
     extent: int = 4096
-    margin: str = "(64 / 4096)"
 
-    @property
-    def envelope(self) -> str:
-        return f"{self.zoom}, {self.x}, {self.y}"
+    @staticmethod
+    def tile_envelope() -> sql.Composable:
+        return sql.SQL("ST_TileEnvelope(%(zoom)s, %(x)s, %(y)s)")
 
-    @property
-    def tile_envelope(self) -> PgFunction:
-        return f"ST_TileEnvelope({self.envelope})"
-
-    @property
-    def tile_envelope_margin(self) -> PgFunction:
-        return f"ST_TileEnvelope({self.envelope}, margin => {self.margin})"
+    @staticmethod
+    def tile_envelope_margin() -> sql.Composable:
+        return sql.SQL("ST_TileEnvelope(%(zoom)s, %(x)s, %(y)s, margin => (%(buffer)s / %(extent)s))")
 
 
 @dataclass
@@ -51,7 +42,7 @@ class MvtQuery:
 
     table: str
     attributes: List[str] = field(default_factory=list)
-    filters: List[str] = field(default_factory=list)
+    filters: Sequence[sql.Composable] = field(default_factory=list)
     transform: bool = False  # Set to True if source srid is not 3857, but beware performanc
     field: str = "geom"
     pk: str = "id"
@@ -60,53 +51,78 @@ class MvtQuery:
     max_render_zoom: Optional[int] = None
 
     @property
-    def json_attributes(self) -> PgFunction:
+    def json_attributes(self) -> sql.Composed:
         """
-        Compiles a jsonb_build_object clause from attributes
-        Returns a `JSONB_BUILD_OBJECT` function clause
+        Create a "JSONB_BUILD_OBJECT" clause
         """
-        statements = []
-        for attr in self.attributes:
-            statements.extend([f"'{attr}'", f'"{attr}"'])
-        joined = ", ".join(statements)
-        return f" jsonb_build_object({joined}) " if self.attributes else ""
+        if not self.attributes:
+            return sql.Composed(sql.SQL(""))
+        params = None
+        for a in self.attributes:
+            if not params:
+                params = sql.Literal(a)
+            else:
+                params += sql.Literal(a)  # Name of the key is the same as the field
+            params += sql.Identifier(a)  # The field to use as the value for the JSON
+        composed_params = params.join(", ")  # type: ignore
+        return sql.SQL("jsonb_build_object({})").format(composed_params)
 
     @property
-    def transformed_geom(self) -> PgFunction:
+    def transformed_geom(self) -> sql.Composable:
         """
         Return an `ST_TRANSFORM` clause
         https://postgis.net/docs/ST_Transform.html
         """
         if self.transform:
-            return f"ST_TRANSFORM({self.field}, 3857)"
-        return self.field
+            return sql.SQL("ST_TRANSFORM({field}, 3857)").format(sql.Identifier(self.field))
+        return sql.Identifier(self.field)
 
     @property
-    def alias(self):
+    def alias(self) -> sql.Composable:
         """
         The name of the query alias to use for postgresql
         """
-        return f"mvt_{self.layer}"
+        return sql.Identifier(f"mvt_{self.layer}")
 
-    def as_mvtgeom(self, tile: Tile) -> PgFunction:
-        where = [f"{self.transformed_geom} && {tile.tile_envelope_margin}"]
-        where.extend(self.filters)
-        where_clause = " AND ".join(where)
+    @property
+    def where(self) -> sql.Composable:
+        if self.filters:
+            where_clause = sql.SQL(" AND ") + sql.SQL(" AND ").join([self.filters])
+        else:
+            where_clause = sql.SQL("")
+        return where_clause
 
-        return f"""
-        ST_AsMVTGeom(
-              {self.transformed_geom},
-              {tile.tile_envelope},
-              extent => {tile.extent},
-              buffer => {tile.buffer}
-        ) AS geom, "{self.pk}", {self.json_attributes}
-          FROM {self.table}
-          WHERE {where_clause}
-        """
+    @property
+    def as_mvtgeom(self) -> sql.Composable:
 
-    def as_mvt(self, tile: Tile) -> PgFunction:
-        if self.min_render_zoom and tile.zoom < self.min_render_zoom:
-            raise OutOfZoomRangeException
-        if self.max_render_zoom and tile.zoom > self.max_render_zoom:
-            raise OutOfZoomRangeException
-        return f"WITH {self.alias} AS (SELECT {self.as_mvtgeom(tile)}) SELECT ST_AsMVT({self.alias}.*, '{self.layer}', {tile.extent}, 'geom', '{self.pk}') FROM {self.alias}"
+        if self.filters:
+            where_clause = sql.SQL(" AND ") + sql.SQL(" AND ").join([self.filters])
+        else:
+            where_clause = sql.SQL("")
+
+        return sql.SQL(
+            """
+            ST_AsMVTGeom(
+                {g},
+                {e},
+                extent => %(extent)s,
+                buffer => %(buffer)s
+            ) AS geom, {pk}, {json_attributes}
+            FROM {t}
+            WHERE {g} && {m} {where}
+            """
+        ).format(
+            g=self.transformed_geom,
+            m=Tile.tile_envelope_margin(),
+            e=Tile.tile_envelope(),
+            t=sql.Identifier(self.table),
+            # Properties of "self"
+            pk=sql.Identifier(self.pk),
+            json_attributes=self.json_attributes,
+            where=self.where,
+        )
+
+    def as_mvt(self) -> PgFunction:
+        outer_query = sql.SQL("""WITH {alias} AS (SELECT {inner_query} ) SELECT ST_AsMVT( {alias}.*, {layer}, %(extent)s, 'geom', {pk}) FROM {alias}""")
+        parameters = dict(alias=self.alias, layer=sql.Literal(self.layer), inner_query=self.as_mvtgeom, pk=sql.Literal(self.pk))
+        return outer_query.format(**parameters)

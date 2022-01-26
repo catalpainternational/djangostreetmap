@@ -1,3 +1,0 @@
-import datetime
-
-def newest_change_from_file(arg0: str) -> datetime.datetime: ...
