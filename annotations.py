@@ -37,13 +37,10 @@ class GeoJsonSerializer:
     def _to_feature(self, feature):
         geom = getattr(feature, self.geom_field)
         _t = geom.geom_type  # type: str
-        _c = coordinates=geom.coords  # type: AnyGeom
+        _c = geom.coords  # type: AnyGeom
         return GeoJsonFeature(
             type="Feature",
-            geometry=GeoJsonGeometry(
-                type=_t,
-                coordinates=_c
-            ),
+            geometry=GeoJsonGeometry(type=_t, coordinates=_c),
             properties={k: getattr(feature, k) for k in self.properties},
         )
 
