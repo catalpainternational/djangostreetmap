@@ -1,6 +1,4 @@
-from functools import reduce
-from operator import add
-from typing import Any, List
+from typing import Iterable, List, Optional
 from django.apps import apps
 
 from django.db import connection
@@ -11,17 +9,16 @@ from django.views.generic.base import TemplateView
 from django.contrib.gis.db.models.functions import Centroid, Transform
 from dataclasses import asdict
 from psycopg2 import sql
+import logging
+from osmflex.models import RoadLine
+from djangostreetmap import models
 
 from annotations import GeoJsonSerializer, MultiGeoJsonSerializer
 
-from .models import (
-    FacebookAiRoad,
-    OsmAdminBoundary,
-    OsmHighway,
-    OsmIslands,
-    OsmIslandsAreas,
-)
 from .tilegenerator import MvtQuery, Tile
+from .timer import Timer
+
+logger = logging.getLogger(__name__)
 
 
 class ExampleMapView(TemplateView):
@@ -29,7 +26,7 @@ class ExampleMapView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["map_view"] = f"[-8.556416, 125.5524171], 14"
+        context["map_view"] = "[-8.556416, 125.5524171], 14"
         return context
 
 
@@ -48,16 +45,9 @@ class TileLayerView(View):
         Override for dynamically determining tile content
         based on tile properties (most likely zoom)
         """
+        return self.layers
 
-        def filter_for_zoom(layer: MvtQuery):
-            if layer.min_render_zoom and tile.zoom < layer.min_render_zoom:
-                return False
-            if layer.max_render_zoom and tile.zoom > layer.max_render_zoom:
-                return False
-
-        return list(filter(filter_for_zoom, self.layers))
-
-    def _generate_tile(self, tile: Tile) -> List[Any]:
+    def _generate_tile(self, tile: Tile) -> List[bytes]:
 
         params = asdict(tile)
 
@@ -65,77 +55,83 @@ class TileLayerView(View):
             tiles = []
             for layer in self.get_layers(tile):
                 query = layer.as_mvt()
-                cursor.execute(query, params)
-                tile_response = cursor.fetchone()
+                # Uncomment to see the SQL which is run
+                # logger.info(query.as_string(cursor.cursor))
+                # with Timer(name="tile generator", logger=logger.info):
+                tile_response = None  # type: Optional[Iterable]
+                try:
+                    cursor.execute(query, params)
+                    tile_response = cursor.fetchone()
+                except Exception as E:
+                    logger.error(f"{E}")
+                    logger.info(query.as_string(cursor.cursor))
+
                 if tile_response:
-                    tiles += tile_response[0]
+                    content = tile_response[0]  # type: bytes
+                    tiles += content
 
             return tiles
 
     def get(self, request, *args, **kwargs):
-        tile = Tile(**kwargs)  # Expect to receive zoom, x, and y in kwargs
-        tiles = reduce(add, self._generate_tile(tile), b'')
-        return HttpResponse(content=tiles, content_type="application/binary")
-
-
-class RoadLayerView(TileLayerView):
-    def get_layers(self, tile: Tile):
-        layers = []
-        for road_class, min_zoom in [
-            # ("steps", 5),
-            # ("bus_guideway", 5),
-            # ("footway", 5),
-            # ("services", 5),
-            ("trunk", 3),
-            ("road", 12),
-            ("secondary", 5),
-            ("trunk_link", 3),
-            ("tertiary", 10),
-            ("secondary_link", 5),
-            ("tertiary_link", 10),
-            ("primary", 3),
-            ("residential", 12),
-            ("primary_link", 12),
-            ("track", 12),
-            ("service", 12),
-            ("unclassified", 12),
-            ("path", 12),
-        ]:
-            layers.append(
-                MvtQuery(
-                    table=OsmHighway._meta.db_table,
-                    attributes=["name", "highway"],
-                    filters=sql.SQL("{} = {}").format(sql.Identifier("highway"), sql.Literal(road_class)),
-                    layer=road_class,
-                    min_render_zoom=min_zoom,
-                    transform=False,
-                )
-            )
-        return layers
-
-
-class AdminBoundaryLayerView(TileLayerView):
-    layers = [MvtQuery(table=OsmAdminBoundary._meta.db_table, attributes=["name"], layer="admin_boundary")]
-
-
-class IslandsLayerView(TileLayerView):
-    layers = [MvtQuery(table=OsmIslands._meta.db_table, attributes=["name"], layer="islands")]
-
-
-class IslandsAreaLayerView(TileLayerView):
-    layers = [MvtQuery(table=OsmIslandsAreas._meta.db_table, attributes=["name"], layer="islands")]
-
-
-class FacebookAiLayerView(TileLayerView):
-    layers = [MvtQuery(table=FacebookAiRoad._meta.db_table, attributes=["highway"], layer="facebookai")]
+        with Timer(name="tile get", logger=logger.info):
+            tile = Tile(**kwargs)  # Expect to receive zoom, x, and y in kwargs
+            tiles = b"".join(self._generate_tile(tile))
+            return HttpResponse(content=tiles, content_type="application/binary")
 
 
 class BuildingPolygon(TileLayerView):
-    layers = [MvtQuery(table="osmflex_buildingpolygon", attributes=["name", "osm_id", "osm_subtype"], layer="buildings", pk="osm_id")]
+    def get_layers(self, tile: Tile):
+        if tile.zoom >= 11:
+            return [MvtQuery(table="osmflex_buildingpolygon", attributes=["name", "osm_id", "osm_subtype"], layer="buildings", pk="osm_id")]
+        elif tile.zoom >= 6:
+            return [MvtQuery(table="osmflex_buildingpolygon", attributes=["name", "osm_id", "osm_subtype"], centroid=True, layer="building_point", pk="osm_id")]
+        else:
+            return []
 
 
 class MajorRoads(TileLayerView):
     layers = [MvtQuery(table="osmflex_roadmajor", attributes=["name", "osm_type"], layer="roads", pk="osm_id")]
+
+
+class MinorRoads(TileLayerView):
+    def get_layers(self, tile: Tile):
+        layers = []
+        for road_class, min_zoom in [
+            ("trunk", 2),
+            ("steps", 12),
+            ("road", 12),
+            ("footway", 12),
+            ("secondary", 7),
+            ("tertiary", 9),
+            ("secondary_link", 7),
+            ("tertiary_link", 9),
+            ("living_street", 12),
+            ("pedestrian", 12),
+            ("primary", 5),
+            ("residential", 13),
+            ("primary_link", 5),
+            ("track", 12),
+            ("motorway_link", 12),
+            ("motorway", 5),
+            ("service", 12),
+            ("unclassified", 12),
+            ("path", 12),
+        ]:
+            if tile.zoom > min_zoom:
+                layers.append(
+                    MvtQuery(
+                        table=RoadLine._meta.db_table,
+                        attributes=["name", "osm_type"],
+                        filters=sql.SQL("{} = {}").format(sql.Identifier("osm_type"), sql.Literal(road_class)),
+                        layer=road_class,
+                        transform=False,
+                        pk="osm_id",
+                    )
+                )
+            else:
+                logger.debug("Out of zoom: %s", road_class)
+
+        return layers
 
 
 class Hospitals(View):
@@ -172,3 +168,7 @@ class Aeroways(View):
         )
 
         return JsonResponse(data=asdict(response.to_collection()), content_type="application/json")
+
+
+class LandLayer(TileLayerView):
+    layers = [MvtQuery(table=models.SimplifiedLandPolygon._meta.db_table, layer="land")]
