@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.gis",
     "djangostreetmap",
+    "corsheaders",
     "osmflex",
     "tests",
 ]
@@ -47,12 +48,16 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    # "pyinstrument.middleware.ProfilerMiddleware",  # Uncomment to profile all requests
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+PYINSTRUMENT_PROFILE_DIR = "profiles"
 
 ROOT_URLCONF = "tests.urls"
 
@@ -135,3 +140,24 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 #         'LOCATION': '/var/tmp/django_cache',
 #     }
 # }
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {"format": "%(name)s:%(levelname)s %(message)s"},
+    },
+    "handlers": {
+        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simple"},
+    },
+    "loggers": {
+        "djangostreetmap": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+    },
+}
