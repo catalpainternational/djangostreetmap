@@ -62,7 +62,13 @@ Runserver is "ok" but this recipe will give faster performance for demonstration
 ```bash
 pip install gunicorn
 gunicorn -w 8 djangostreetmap.wsgi:application
-```
+```s
+
+## Building
+
+poetry version patch
+poetry build
+poetry publish
 
 ## Writing Views
 

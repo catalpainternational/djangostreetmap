@@ -268,7 +268,7 @@ python-versions = "*"
 
 [[package]]
 name = "osmflex"
-version = "0.1.2"
+version = "0.1.3"
 description = ""
 category = "main"
 optional = false
@@ -636,8 +636,8 @@ nodeenv = [
     {file = "nodeenv-1.6.0.tar.gz", hash = "sha256:3ef13ff90291ba2a4a7a4ff9a979b63ffdd00a464dbe04acf0ea6471517a4c2b"},
 ]
 osmflex = [
-    {file = "osmflex-0.1.2-py3-none-any.whl", hash = "sha256:5581a87f2caa3ac74c1fed0c6cc8f7f62e4713445d4342cf35c88fe39425b411"},
-    {file = "osmflex-0.1.2.tar.gz", hash = "sha256:561b1fd36dc728bece6478ed8049a00d9c7c7f674f7c537014164a401c18e231"},
+    {file = "osmflex-0.1.3-py3-none-any.whl", hash = "sha256:982323841f2510ae57eba8f0b17fe4f7376515ee91a39f9f27ea587f92511c39"},
+    {file = "osmflex-0.1.3.tar.gz", hash = "sha256:149d7568f2ab0b24e390a9fffd730a8f41a1d195d8b4c7d17f612b81d326636e"},
 ]
 packaging = [
     {file = "packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},
