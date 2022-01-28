@@ -25,6 +25,7 @@ license = "GPLv3"
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
 osmflex = "^0.1.2"
+pydantic = "~1.9.0"
 
 [tool.poetry.dev-dependencies]
 Django = "^4.0.1"

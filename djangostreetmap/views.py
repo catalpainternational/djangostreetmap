@@ -67,6 +67,10 @@ class TileLayerView(View):
                 except Exception as E:
                     logger.error(f"{E}")
                     logger.info(query.as_string(cursor.cursor))
+                if not tile_response:
+                    continue
+                content = tile_response[0]
+                tiles += content
 
                 if tile_response:
                     content: bytes = tile_response[0]
