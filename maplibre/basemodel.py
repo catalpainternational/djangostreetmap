@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 from pydantic import BaseModel, HttpUrl, Field
 from .sources import AnySource
@@ -8,7 +8,8 @@ from .light import Light
 
 
 class Root(BaseModel):
-    bearing: Optional[float] = Field(
+    id: Optional[str]
+    bearing: Optional[Union[int, float]] = Field(
         description="""Default bearing, in degrees. The bearing is the compass direction that is "up"; for example, a bearing of 90° orients the map so that east is up. This value will be used only if the map has not been positioned by other means (e.g. map options or user interaction)."""
     )
     center: Optional[Tuple[float, float]] = Field(
@@ -23,7 +24,7 @@ class Root(BaseModel):
         description="""Arbitrary properties useful to track with the stylesheet, but do not influence rendering. Properties should be prefixed to avoid collisions, like 'mapbox:'."""
     )
     name: Optional[str] = Field(description="""A human-readable name for the style.""")
-    pitch: Optional[float] = Field(
+    pitch: Optional[Union[int, float]] = Field(
         description="""Default pitch, in degrees. Zero is perpendicular to the surface, for a look straight down at the map, while a greater value like 60 looks ahead towards the horizon. The style pitch will be used only if the map has not been positioned by other means (e.g. map options or user interaction).""",
     )
     sources: Dict[str, AnySource] = Field(description="""Data source specifications.""")
