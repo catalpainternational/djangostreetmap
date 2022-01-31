@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+from maplibre import layer
+
 # Create your tests here.
 from . import sources
 
@@ -47,3 +49,34 @@ class SourcesTestCase(TestCase):
                 [-122.51423120498657, 37.56161849366671],
             ],
         ).json()
+
+
+
+class DemoTilesTest(TestCase):
+    """
+    Reproduce the code at
+    https://demotiles.maplibre.org/style.json
+    in python files
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+
+        from importlib import resources
+        import json
+        cls.style_text = resources.read_text("maplibre", "style.json")
+        cls.style = json.loads(cls.style_text)
+        return super().setUpClass()
+
+    def test_base(self):
+        # Try the entire test file
+        ...
+        from .basemodel import Root
+        root_two = Root.parse_obj(self.style)
+        print(root_two)
+
+    def test_demo_backgroundlayer(self):
+
+        # Read the json
+        # Try layers...
+        layer.LayerFactory(**self.style.get('layers')[0])

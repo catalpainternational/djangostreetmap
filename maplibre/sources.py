@@ -1,3 +1,4 @@
+from .layer import Expression
 from typing import Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Field, AnyUrl
 
@@ -18,6 +19,8 @@ like differentiating between types of roads in
 a highways layer.
 """
 
+XY = Tuple[float, float]
+Coords = Tuple[XY, XY, XY, XY]
 
 class SchemeEnum(str, Enum):
     xyz = "xyz"  # Slippy map tilenames scheme.
@@ -109,7 +112,7 @@ class GeoJson(Source):
         description="Max zoom on which to cluster points if clustering is enabled. Defaults to one zoom less than maxzoom (so that last zoom features are not clustered). Clusters are re-evaluated at integer zoom levels so setting clusterMaxZoom to 14 means the clusters will be displayed until z15."
     )
     clusterMinPoints: Optional[int] = Field(2, description="Minimum number of points necessary to form a cluster if clustering is enabled.")
-    clusterProperties: Optional[Dict] = Field(
+    clusterProperties: Optional[Dict[str,Expression]] = Field(
         description="""
         An object defining custom properties on the generated clusters
         if clustering is enabled, aggregating values from clustered points.
@@ -135,12 +138,7 @@ class GeoJson(Source):
     promoteId: Optional[Union[str, Dict[str, str]]] = Field(
         description="A property to use as a feature id (for feature state). Either a property name, or an object of the form {<sourceLayer>: <propertyName>}."
     )
-    tolerance: Optional[float] = Field(0.375, description="Douglas-Peucker simplification tolerance (higher means simpler geometries and faster performance).")
-
-
-XY = Tuple[float, float]
-Coords = Tuple[XY, XY, XY, XY]
-
+    tolerance: Optional[float] = Field( description="Douglas-Peucker simplification tolerance (higher means simpler geometries and faster performance).")
 
 class Image(BaseModel):
     """
@@ -164,3 +162,11 @@ class Video(BaseModel):
     type: str = "video"
     coordinates: Coords = Field(description="Corners of image specified in longitude, latitude pairs.")
     urls: List[HttpUrl] = Field(description="URL that points to an image.")
+
+
+AnySource = Union[Vector,
+Raster,
+RasterDem,
+GeoJson,
+Image,
+Video]
