@@ -37,6 +37,7 @@ Extend installed_apps with the following apps:
 [
     "django.contrib.gis",
     "djangostreetmap",
+    "osmflex",
 ]
 ```
 
@@ -62,7 +63,7 @@ Runserver is "ok" but this recipe will give faster performance for demonstration
 ```bash
 pip install gunicorn
 gunicorn -w 8 djangostreetmap.wsgi:application
-```s
+```
 
 ## Building
 
@@ -94,9 +95,9 @@ Append the URL to your urls.py as follows. Note the zoom, x and y are mandatory.
 
 ```bash
 docker run --name=osm \
-    -e POSTGRES_DB=osm \
-    -e POSTGRES_USER=osm \
-    -e POSTGRES_PASSWORD=osm \
+    -e POSTGRES_DB=postgres \
+    -e POSTGRES_USER=postgres \
+    -e POSTGRES_PASSWORD=post1234 \
     -p 49155:5432 \
     postgis/postgis:12-3.1
 ```
@@ -121,7 +122,7 @@ To apply this to your project:
         "USER": "postgres",
         "PASSWORD": "post1233",
         "HOST": "localhost",
-        "PORT": "49159",
+        "PORT": "49154",
         "NAME": "postgres",
     }
 }
@@ -135,13 +136,23 @@ or
 
 wget https://download.geofabrik.de/asia/east-timor-latest.osm.pbf
 
-You can also use the management command with a region and country name: this is also able to update existing data.
+### Import Data
+
+The "osmflex" app has two management commands to run which will populate osmflex models
 
 ```sh
-./manage.py osm_update asia east-timor --cache_dir=/home/josh/Desktop/osm/
+./manage.py run_osm2pgsql /media/josh/blackgate/osm/asia/east-timor-latest.osm.pbf
+```
+
+```sh
+./manage.py import_from_pgosmflex
 ```
 
 ### Exploring data
+
+See the Django admin for osmflex:
+
+http://localhost:8000/admin/osmflex
 
 psql --host localhost --username postgres --port 49159
 
