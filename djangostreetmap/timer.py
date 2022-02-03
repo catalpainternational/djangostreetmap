@@ -1,9 +1,9 @@
 # from https://realpython.com/python-timer/#a-python-timer-decorator
 
 
+import time
 from contextlib import ContextDecorator
 from dataclasses import dataclass, field
-import time
 from typing import Any, Callable, ClassVar, Dict, Optional
 
 

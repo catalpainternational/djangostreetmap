@@ -1,21 +1,23 @@
-from typing import Iterable, List, Optional
-from django.apps import apps
+import logging
+from dataclasses import asdict
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Type, Union
 
+from django.apps import apps
+from django.contrib.gis.db.models.functions import Centroid, Transform
 from django.db import connection
+from django.db.models import Model
 from django.http import JsonResponse
 from django.http.response import HttpResponse
 from django.views import View
 from django.views.generic.base import TemplateView
-from django.contrib.gis.db.models.functions import Centroid, Transform
-from dataclasses import asdict
+from osmflex.models import OsmLine, OsmPoint, OsmPolygon, RoadLine
 from psycopg2 import sql
-import logging
-from osmflex.models import RoadLine
+
 from djangostreetmap import models
+from djangostreetmap.annotations import GeoJsonSerializer, MultiGeoJsonSerializer
+from djangostreetmap.functions import AsFeatureCollection, Intersects
+from djangostreetmap.tilegenerator import MvtQuery, Tile
 
-from annotations import GeoJsonSerializer, MultiGeoJsonSerializer
-
-from .tilegenerator import MvtQuery, Tile
 from .timer import Timer
 
 logger = logging.getLogger(__name__)
@@ -52,23 +54,23 @@ class TileLayerView(View):
         params = asdict(tile)
 
         with connection.cursor() as cursor:
-            tiles = []
+            tiles: List[bytes] = []
             for layer in self.get_layers(tile):
                 query = layer.as_mvt()
                 # Uncomment to see the SQL which is run
                 # logger.info(query.as_string(cursor.cursor))
                 # with Timer(name="tile generator", logger=logger.info):
-                tile_response = None  # type: Optional[Iterable]
+                tile_response: Optional[Sequence] = None
                 try:
-                    cursor.execute(query, params)
+                    cursor.execute(query, params)  # type: ignore
                     tile_response = cursor.fetchone()
                 except Exception as E:
                     logger.error(f"{E}")
                     logger.info(query.as_string(cursor.cursor))
 
                 if tile_response:
-                    content = tile_response[0]  # type: bytes
-                    tiles += content
+                    content: bytes = tile_response[0]
+                    tiles.append(content)
 
             return tiles
 
@@ -172,3 +174,36 @@ class Aeroways(View):
 
 class LandLayer(TileLayerView):
     layers = [MvtQuery(table=models.SimplifiedLandPolygon._meta.db_table, layer="land")]
+
+
+class ModelFeatureCollectionView(View):
+    """
+    Container for OSM layer data
+    """
+
+    class Meta:
+        proxy = True
+
+    def geojson(
+        self,
+        model: Union[OsmPoint, OsmLine, OsmPolygon],
+        filter_kwargs: Dict[str, Any],
+        intersect: Type[Model],  # Note that we make some assumptions about "intersect" model here, see "Intersect" class
+        **kwargs,
+    ):
+        """
+        Returns a FeatureCollection of instances from "model" where the geometry
+        intersects the area represented by this location profile
+
+        For instance
+
+        >>> OpenStreetMapData.objects.get(area__name="Highlands 1").geojson(AmenityPoint, osm_type="school")
+        """
+        # The OSM data import is in 3857. We transform to the geom of the
+        # surrounding geometry, if applicable
+        queryset = model.objects.all().annotate(geom_t=Transform("geom", 4326))
+        queryset = queryset.annotate(in_area=Intersects(intersect)).filter(in_area=True)
+        queryset = queryset.filter(**filter_kwargs)
+
+        attributes = {field.name: field.name for field in model._meta.fields if field.name != "geom"}
+        return queryset.aggregate(_=AsFeatureCollection("geom_t", **attributes))["_"]

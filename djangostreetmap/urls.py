@@ -1,7 +1,15 @@
 from django.urls import path
 from django.views.decorators.cache import cache_page
 
-from .views import Aeroways, ExampleMapView, Hospitals, LandLayer, MajorRoads, MinorRoads, BuildingPolygon
+from .views import (
+    Aeroways,
+    BuildingPolygon,
+    ExampleMapView,
+    Hospitals,
+    LandLayer,
+    MajorRoads,
+    MinorRoads,
+)
 
 app_name = "djangostreetmap"
 

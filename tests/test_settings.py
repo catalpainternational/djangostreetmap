@@ -83,13 +83,16 @@ WSGI_APPLICATION = "djangostreetmap.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+
+# Temporary:
+# docker run --rm -p 49155:5432 --name=djangostreetmap -e POSTGRES_PASSWORD=post1234 postgis/postgis:14-3.2 -c fsync=off -c shared_buffers=4096MB
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
         "USER": "postgres",
         "PASSWORD": "post1234",
         "HOST": "localhost",
-        "PORT": "49154",
+        "PORT": "49155",
         "NAME": "postgres",
     }
 }
@@ -159,5 +162,6 @@ LOGGING = {
             "level": "DEBUG",
             "propagate": True,
         },
+        "osmflex": {"handlers": ["console"], "level": "DEBUG", "propagate": True},
     },
 }

@@ -21,6 +21,16 @@
                 "runserver"
             ],
             "django": true
+        },
+        {
+            "name": "Python: Django shell",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "shell_plus"
+            ],
+            "django": true
         }
     ]
 }

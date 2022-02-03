@@ -1,9 +1,8 @@
 from dataclasses import dataclass, field
 from typing import List, Sequence
 
-from psycopg2 import sql
-
 from django.db import connection
+from psycopg2 import sql
 
 # To time mvt queries uncomment the following
 # from .timer import Timer
@@ -55,7 +54,7 @@ class MvtQuery:
         Create a "JSONB_BUILD_OBJECT" clause
         """
         if not self.attributes:
-            return sql.SQL("")
+            return sql.SQL("").format()
         params = None
         for a in self.attributes:
             if not params:

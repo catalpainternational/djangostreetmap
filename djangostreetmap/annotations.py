@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Tuple, Union
+
 from django.db import models
 
 P = Tuple[float, float]

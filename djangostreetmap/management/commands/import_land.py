@@ -1,5 +1,6 @@
+from django.contrib.gis.utils import LayerMapping  # type: ignore
 from django.core.management.base import BaseCommand
-from django.contrib.gis.utils import LayerMapping
+
 from djangostreetmap.models import SimplifiedLandPolygon
 
 
