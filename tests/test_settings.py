@@ -89,11 +89,11 @@ WSGI_APPLICATION = "djangostreetmap.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "USER": "postgres",
-        "PASSWORD": "post1234",
+        "USER": "dird",
+        "PASSWORD": "dird",
         "HOST": "localhost",
-        "PORT": "49155",
-        "NAME": "postgres",
+        "PORT": "49156",
+        "NAME": "dird_db",
     }
 }
 # Password validation

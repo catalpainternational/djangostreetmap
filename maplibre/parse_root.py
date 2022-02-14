@@ -1,7 +1,8 @@
 from importlib import resources
 import json
 from maplibre.basemodel import Root
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     style_text = resources.read_text("maplibre", "style.json")
     style = json.loads(style_text)

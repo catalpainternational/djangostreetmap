@@ -160,7 +160,7 @@
                 // .addTo(mymap);
 
                 const minor_roads = L.vectorGrid
-                .protobuf("{% url 'djangostreetmap:minor_roads' %}{z}/{x}/{y}.pbf", road_opts)
+                .protobuf("{% url 'djangostreetmap:roads' %}{z}/{x}/{y}.pbf", road_opts)
                 .on("mouseover", function (e) {
                     L.popup()
                         .setContent(`Name: ${e.layer.properties.name}, type: ${e.layer.properties.osm_type}`)

@@ -7,6 +7,7 @@ A style's root transition property provides global
 transition defaults for that style.
 """
 
+
 class Transition(BaseModel):
-  duration: int = 300
-  delay: int = 0
+    duration: int = 300
+    delay: int = 0

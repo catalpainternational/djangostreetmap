@@ -1,5 +1,6 @@
-from .layer import Expression
-from typing import Dict, List, Optional, Tuple, Union
+from . import layer
+from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing_extensions import Annotated
 from pydantic import BaseModel, Field, AnyUrl
 
 from enum import Enum
@@ -21,6 +22,7 @@ a highways layer.
 
 XY = Tuple[float, float]
 Coords = Tuple[XY, XY, XY, XY]
+
 
 class SchemeEnum(str, Enum):
     xyz = "xyz"  # Slippy map tilenames scheme.
@@ -44,7 +46,7 @@ class Source(BaseModel):
         description="Maximum zoom level for which tiles are available, as in the TileJSON spec. Data from tiles at the maxzoom are used when displaying the map at higher zoom levels.",
     )
     minzoom: int = Field(0, description="Minimum zoom level for which tiles are available, as in the TileJSON spec.")
-    tiles: Optional[List[str]] = Field(default_factory=list, description="An array of one or more tile source URLs, as in the TileJSON spec.")
+    tiles: Optional[List[AnyUrl]] = Field(default_factory=list, description="An array of one or more tile source URLs, as in the TileJSON spec.")
     url: Optional[AnyUrl] = Field(None, description="A URL to a TileJSON resource.")
     volatile: bool = Field(False, description="A setting to determine whether a source's tiles are cached locally.")
 
@@ -59,7 +61,7 @@ class Vector(Source):
     the "url" value should be of the form mapbox://tilesetid.
     """
 
-    type: str = "vector"
+    type: Literal["vector"] = "vector"
     promoteId: Optional[str] = Field(
         description="""
         A property to use as a feature id (for feature state).
@@ -73,7 +75,7 @@ class Vector(Source):
 
 
 class Raster(Source):
-    type: str = "raster"
+    type: Literal["raster"] = "raster"
     tileSize: int = Field(512, description="The minimum visual size to display tiles for this layer. Only configurable for raster layers.")
 
 
@@ -82,7 +84,7 @@ class RasterDem(Source):
     A raster DEM source. Only supports Mapbox Terrain RGB (mapbox://mapbox.terrain-rgb):
     """
 
-    type: str = "raster-dem"
+    type: Literal["raster-dem"] = "raster-dem"
     encoding: EncodingEnum = Field(EncodingEnum.mapbox, description="The encoding used by this source. Mapbox Terrain RGB is used by default")
     url: Optional[AnyUrl] = Field(None, description="A URL to a TileJSON resource.")
 
@@ -92,7 +94,7 @@ class GeoJson(Source):
     A GeoJSON source. Data must be provided via a "data" property, whose value can be a URL or inline GeoJSON.
     """
 
-    type: str = "geojson"
+    type: Literal["geojson"] = "geojson"
     buffer: int = Field(
         128,
         description="Size of the tile buffer on each side. A value of 0 produces no buffer. A value of 512 produces a buffer as wide as the tile itself. Larger values produce fewer rendering artifacts near tile edges and slower performance.",
@@ -112,7 +114,7 @@ class GeoJson(Source):
         description="Max zoom on which to cluster points if clustering is enabled. Defaults to one zoom less than maxzoom (so that last zoom features are not clustered). Clusters are re-evaluated at integer zoom levels so setting clusterMaxZoom to 14 means the clusters will be displayed until z15."
     )
     clusterMinPoints: Optional[int] = Field(2, description="Minimum number of points necessary to form a cluster if clustering is enabled.")
-    clusterProperties: Optional[Dict[str,Expression]] = Field(
+    clusterProperties: Optional[Dict[str, layer.Expression]] = Field(
         description="""
         An object defining custom properties on the generated clusters
         if clustering is enabled, aggregating values from clustered points.
@@ -138,7 +140,8 @@ class GeoJson(Source):
     promoteId: Optional[Union[str, Dict[str, str]]] = Field(
         description="A property to use as a feature id (for feature state). Either a property name, or an object of the form {<sourceLayer>: <propertyName>}."
     )
-    tolerance: Optional[float] = Field( description="Douglas-Peucker simplification tolerance (higher means simpler geometries and faster performance).")
+    tolerance: Optional[float] = Field(description="Douglas-Peucker simplification tolerance (higher means simpler geometries and faster performance).")
+
 
 class Image(BaseModel):
     """
@@ -147,7 +150,7 @@ class Image(BaseModel):
     image corners listed in clockwise order: top left, top right, bottom right, bottom left.
     """
 
-    type: str = "image"
+    type: Literal["image"] = "image"
     coordinates: Coords = Field(description="Corners of image specified in longitude, latitude pairs.")
     url: HttpUrl = Field(description="URL that points to an image.")
 
@@ -159,14 +162,9 @@ class Video(BaseModel):
     image corners listed in clockwise order: top left, top right, bottom right, bottom left.
     """
 
-    type: str = "video"
+    type: Literal["video"] = "video"
     coordinates: Coords = Field(description="Corners of image specified in longitude, latitude pairs.")
     urls: List[HttpUrl] = Field(description="URL that points to an image.")
 
 
-AnySource = Union[Vector,
-Raster,
-RasterDem,
-GeoJson,
-Image,
-Video]
+AnySource = Annotated[Union[Vector, Raster, RasterDem, GeoJson, Image, Video], Field(discriminator="type")]

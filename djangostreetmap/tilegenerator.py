@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Sequence
+from typing import Dict, List, Sequence
 
 from django.db import connection
 from psycopg2 import sql
@@ -41,6 +41,7 @@ class MvtQuery:
 
     table: str
     attributes: List[str] = field(default_factory=list)
+    calculated_attributes: Dict[str, sql.Composed] = field(default_factory=dict)
     filters: Sequence[sql.Composable] = field(default_factory=list)
     transform: bool = False  # Set to True if source srid is not 3857, but beware performance
     field: str = "geom"
@@ -62,7 +63,16 @@ class MvtQuery:
             else:
                 params += sql.Literal(a)  # Name of the key is the same as the field
             params += sql.Identifier(a)  # The field to use as the value for the JSON
+
+        for field, expression in self.calculated_attributes.items():
+            if not params:
+                params = sql.Literal(field)
+            else:
+                params += sql.Literal(field)  # Name of the key is the same as the field
+            params += expression  # The expression to use as the value for the JSON
+
         composed_params = params.join(", ")  # type: ignore
+
         return sql.SQL(", jsonb_build_object({})").format(composed_params)
 
     @property
@@ -91,11 +101,7 @@ class MvtQuery:
 
     @property
     def where(self) -> sql.Composable:
-        if self.filters:
-            where_clause = sql.SQL(" AND ") + sql.SQL(" AND ").join([self.filters])
-        else:
-            where_clause = sql.SQL("")
-        return where_clause
+        return sql.SQL(" AND ") + sql.SQL(" AND ").join(self.filters) if self.filters else sql.SQL("")
 
     @property
     def as_mvtgeom(self) -> sql.Composable:
@@ -109,17 +115,28 @@ class MvtQuery:
                 buffer => %(buffer)s
             ) AS geom, {pk} {json_attributes}
             FROM {t}
-            WHERE {g} && {m} {where}
+            WHERE {where}
             """
         ).format(
             cg=self.centroid_wrap,
-            g=self.transformed_geom,
             m=Tile.tile_envelope_margin(),
             e=Tile.tile_envelope(),
             t=sql.Identifier(self.table),
             # Properties of "self"
             pk=sql.Identifier(self.pk),
             json_attributes=self.json_attributes,
+            where=self._feature_query,
+        )
+
+    @property
+    def _feature_query(self) -> sql.Composable:
+        """
+        Return the sql required for the geometry query
+        and other specified filters
+        """
+        return sql.SQL("""{g} && {m} {where}""").format(
+            g=self.transformed_geom,
+            m=Tile.tile_envelope_margin(),
             where=self.where,
         )
 

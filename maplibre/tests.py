@@ -6,6 +6,36 @@ from maplibre import layer
 from . import sources
 
 
+class LayersTestCase(TestCase):
+    def test_layer(self):
+
+        trunk_roads = layer.Layer(
+            type="line",
+            id="trunk_roads",
+            source="roads",
+            sourceLayer="trunk",
+            layout={"line-cap": "round", "line-join": "round"},
+            paint={"line-color": "#e9ac77", "line-width": {"base": 1.2, "stops": [[12, 1], [13, 3], [14, 4], [20, 15]]}},
+        )
+
+        trunk_roads.json()
+
+    def test_reverse_layer(self):
+
+        layer_detail = {
+            "id": "landuse_residential",
+            "type": "fill",
+            "source": "openmaptiles",
+            "source-layer": "landuse",
+            "maxzoom": 8,
+            "filter": ["==", "class", "residential"],
+            "paint": {"fill-color": {"base": 1, "stops": [[9, "hsla(0, 3%, 85%, 0.84)"], [12, "hsla(35, 57%, 88%, 0.49)"]]}},
+        }
+
+        _layer = layer.Layer(**layer_detail)
+        print(_layer)
+
+
 class SourcesTestCase(TestCase):
     def test_vector_tiles(self):
         sources.Vector(**{"tiles": ["http://a.example.com/tiles/{z}/{x}/{y}.pbf", "http://b.example.com/tiles/{z}/{x}/{y}.pbf"], "maxzoom": 14}).json()
@@ -51,7 +81,6 @@ class SourcesTestCase(TestCase):
         ).json()
 
 
-
 class DemoTilesTest(TestCase):
     """
     Reproduce the code at
@@ -64,6 +93,7 @@ class DemoTilesTest(TestCase):
 
         from importlib import resources
         import json
+
         cls.style_text = resources.read_text("maplibre", "style.json")
         cls.style = json.loads(cls.style_text)
         return super().setUpClass()
@@ -72,6 +102,7 @@ class DemoTilesTest(TestCase):
         # Try the entire test file
         ...
         from .basemodel import Root
+
         root_two = Root.parse_obj(self.style)
         print(root_two)
 
@@ -79,4 +110,34 @@ class DemoTilesTest(TestCase):
 
         # Read the json
         # Try layers...
-        layer.LayerFactory(**self.style.get('layers')[0])
+        layer.Layer(**self.style.get("layers")[0])
+
+
+class OsmLibertyTest(TestCase):
+    """
+    Reproduce the code of the "osm Liberty" style
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+
+        from importlib import resources
+        import json
+
+        cls.style_text = resources.read_text("maplibre", "osm_liberty.json")
+        cls.style = json.loads(cls.style_text)
+        return super().setUpClass()
+
+    def test_base(self):
+        # Try the entire test file
+        ...
+        from .basemodel import Root
+
+        root_two = Root.parse_obj(self.style)
+        print(root_two)
+
+    def test_demo_backgroundlayer(self):
+
+        # Read the json
+        # Try layers...
+        layer.Layer(**self.style.get("layers")[0])
