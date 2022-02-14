@@ -38,6 +38,10 @@ types-psycopg2 = "^2.9.6"
 pytest = "^6.2.5"
 requests = "^2.27.1"
 django-cors-headers = "^3.11.0"
+pytest-django = "^4.5.2"
+psycopg2-binary = "2.8.4"
+gunicorn = "^20.1.0"
+flake8 = "^4.0.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
