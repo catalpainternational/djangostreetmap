@@ -17,10 +17,15 @@ exclude = '''
 
 [tool.poetry]
 name = "djangostreetmap"
-version = "0.1.5"
+version = "0.1.6"
 description = ""
 authors = ["Joshua Brooks <josh.vdbroek@gmail.com>"]
 license = "GPLv3"
+
+packages = [
+  { include = "djangostreetmap" },
+  { include = "maplibre" }
+]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"

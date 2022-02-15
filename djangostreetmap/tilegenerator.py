@@ -1,8 +1,11 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Sequence
+from typing import Dict, List, Sequence, Union
 
+
+from django.contrib.gis.db.models import GeometryField
 from django.db import connection
 from psycopg2 import sql
+
 
 # To time mvt queries uncomment the following
 # from .timer import Timer
@@ -41,7 +44,7 @@ class MvtQuery:
 
     table: str
     attributes: List[str] = field(default_factory=list)
-    calculated_attributes: Dict[str, sql.Composed] = field(default_factory=dict)
+    calculated_attributes: Dict[str, Union[sql.Composed, sql.SQL]] = field(default_factory=dict)
     filters: Sequence[sql.Composable] = field(default_factory=list)
     transform: bool = False  # Set to True if source srid is not 3857, but beware performance
     field: str = "geom"
@@ -148,3 +151,38 @@ class MvtQuery:
     def debug(self) -> str:
         with connection.cursor() as cursor:
             return self.as_mvt().as_string(cursor.cursor)
+
+    @classmethod
+    def from_model(cls: "MvtQuery", model, *args, **kwargs) -> "MvtQuery":
+
+        if "field" in kwargs:
+            field = kwargs.get("field")
+        else:
+            for field in model._meta.fields:
+                if isinstance(field, GeometryField):
+                    field = field.db_column or field.attname
+                    break
+        assert field, f"No geometry field could be identified for {model}"
+
+        if "attributes" in kwargs:
+            attributes = kwargs["attributes"]
+        else:
+            attributes = [f.db_column or f.attname for f in model._meta.fields if not isinstance(f, GeometryField)]
+
+        if "pk" in kwargs:
+            pk = kwargs["pk"]
+        else:
+            for pk_field_candidate in model._meta.fields:
+                if pk_field_candidate.primary_key:
+                    pk = pk_field_candidate.db_column or pk_field_candidate.attname
+                    break
+        assert pk, f"No primary key field could be identified for {model}"
+
+        return cls(
+            table=model._meta.db_table,
+            attributes=attributes,
+            field=field,
+            transform=model._meta.get_field(field).srid != 3857,
+            pk=pk,
+            layer=kwargs.get("layer", model._meta.model_name),
+        )

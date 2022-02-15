@@ -77,3 +77,21 @@ class RoadMvtTestCase(TestCase):
             tile_response = cursor.fetchone()
             content = tile_response[0]  # type: memoryview
         print(bytes(content).decode())
+
+
+class FromQueryTestCase(TestCase):
+    def test_from_query(self):
+
+        port_moresby = Tile(zoom=14, x=14891, y=8624)
+
+        from djangostreetmap.tilegenerator import MvtQuery
+
+        with connection.cursor() as cursor:
+
+            # Count the items
+
+            cursor.execute(MvtQuery.from_model(RoadLine).as_mvt(), asdict(port_moresby))
+
+            tile_response = cursor.fetchone()
+            content = tile_response[0]  # type: memoryview
+        print(bytes(content).decode())

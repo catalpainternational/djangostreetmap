@@ -54,7 +54,7 @@ class Root(BaseModel):
                 continue
 
             assert layer.source is not None
-            
+
             source = sources.get(layer.source)
 
             assert source is not None, "A source-layer is required for vector types: source %s not found for layer %s. Sources are: %s" % (

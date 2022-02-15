@@ -126,15 +126,13 @@ class Roads(TileLayerView):
             ("service", 12),
             ("unclassified", 12),
             ("path", 12),
-        ]  # type: Tuple[Tuple[str, int]]
+        ]  # type: List[Tuple[str, int]]
 
         # Determine which road types to include in the layer
-        road_types = [road_type for road_type, min_zoom in road_osm_types if tile.zoom > min_zoom]
 
-        # Build an array for the query
-        type_filter = sql.Identifier("osm_type") + sql.SQL(" = ANY ") + sql.SQL("(ARRAY[")
-        type_filter += sql.SQL(",").join([sql.Literal(rt) for rt in road_types])
-        type_filter += sql.SQL("]::text[])")
+        type_filter = sql.SQL("""{field} = ANY(ARRAY[{types}]::text[])""").format(
+            field=sql.Identifier("osm_type"), types=sql.SQL(",").join([sql.Literal(rt) for rt, mz in road_osm_types if tile.zoom > mz])
+        )
 
         roads = MvtQuery(
             table=RoadLine._meta.db_table,
@@ -252,54 +250,47 @@ class MapStyle(View):
         # Styles for every kind of road
 
         # Set the line, source and layout which are common properties of all roads
-        road_common = {"type": "line", "source": "roads", "layout": {"line-join": "round", "line-cap": "round"}}
+        road_common = {"type": "line", "source": "roads", "sourceLayer": "transportation", "layout": {"line-join": "round", "line-cap": "round"}}
 
         road_casing = [
             L(
                 id="road_trunk_casing",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "trunk"]],
                 paint={"line-color": "#e9ac77", "line-width": {"base": 1.2, "stops": [[5, 0.4], [6, 0.7], [7, 1.75], [20, 22]]}},
                 **road_common,
             ),
             L(
                 id="road_primary_casing",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "primary"]],
                 paint={"line-color": "#e9ac77", "line-width": {"base": 1.2, "stops": [[5, 0.4], [6, 0.7], [7, 1.75], [20, 22]]}},
                 **road_common,
             ),
             L(
                 id="road_secondary_casing",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "secondary"]],
                 paint={"line-color": "#e9ac77", "line-width": {"base": 1.2, "stops": [[8, 1.5], [20, 17]]}},
                 **road_common,
             ),
             L(
                 id="road_tertiary_casing",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "tertiary"]],
                 paint={"line-color": "#e9ac77", "line-width": {"base": 1.2, "stops": [[8, 1.5], [20, 17]]}},
                 **road_common,
             ),
             L(
                 id="road_motorway_casing",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "motorway"]],
                 paint={"line-color": "#e9ac77", "line-width": {"base": 1.2, "stops": [[5, 0.4], [6, 0.7], [7, 1.75], [20, 22]]}},
                 **road_common,
             ),
             L(
                 id="road_residential_casing",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "residential"]],
                 paint={"line-color": "#cfcdca", "line-opacity": {"stops": [[12, 0], [12.5, 1]]}, "line-width": {"base": 1.2, "stops": [[12, 0.5], [13, 1], [14, 4], [20, 20]]}},
                 **road_common,
             ),
             L(
                 id="road_service_casing",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "service"]],
                 paint={"line-color": "#cfcdca", "line-width": {"base": 1.2, "stops": [[15, 1], [16, 4], [20, 11]]}},
                 **road_common,
@@ -310,49 +301,42 @@ class MapStyle(View):
         road_lines = [
             L(
                 id="road_motorway",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "motorway"]],
                 paint={"line-color": {"base": 1, "stops": [[5, "hsl(26, 87%, 62%)"], [6, "#fc8"]]}, "line-width": {"base": 1.2, "stops": [[5, 0], [7, 1], [20, 18]]}},
                 **road_common,
             ),
             L(
                 id="road_trunk",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "trunk"]],
                 paint={"line-color": "#fea", "line-width": {"base": 1.2, "stops": [[5, 0], [7, 1], [20, 18]]}},
                 **road_common,
             ),
             L(
                 id="road_residential",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "residential"]],
                 paint={"line-color": "#fff", "line-width": {"base": 1.2, "stops": [[13.5, 0], [14, 2.5], [20, 18]]}},
                 **road_common,
             ),
             L(
                 id="road_service",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "service"]],
                 paint={"line-color": "#fff", "line-width": {"base": 1.2, "stops": [[13.5, 0], [14, 2.5], [20, 18]]}},
                 **road_common,
             ),
             L(
                 id="road_primary",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "primary"]],
                 paint={"line-color": "#fea", "line-width": {"base": 1.2, "stops": [[5, 0], [7, 1], [20, 18]]}},
                 **road_common,
             ),
             L(
                 id="road_secondary",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "secondary"]],
                 paint={"line-color": "#fea", "line-width": {"base": 1.2, "stops": [[6.5, 0], [8, 0.5], [20, 13]]}},
                 **road_common,
             ),
             L(
                 id="road_tertiary",
-                sourceLayer="transportation",
                 filter=["all", ["==", "osm_type", "tertiary"]],
                 paint={"line-color": "#fea", "line-width": {"base": 1.2, "stops": [[6.5, 0], [8, 0.5], [20, 13]]}},
                 **road_common,
