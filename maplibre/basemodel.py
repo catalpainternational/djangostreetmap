@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
-from pydantic import BaseModel, HttpUrl, Field, validator
+from pydantic import BaseModel, AnyUrl, Field, validator
 from .sources import AnySource
 
 from .layer import Layer
@@ -15,7 +15,7 @@ class Root(BaseModel):
     center: Optional[Tuple[float, float]] = Field(
         description="""Default map center in longitude and latitude. The style center will be used only if the map has not been positioned by other means (e.g. map options or user interaction)."""
     )
-    glyphs: Optional[str] = Field(
+    glyphs: Optional[AnyUrl] = Field(
         description="""A URL template for loading signed-distance-field glyph sets in PBF format. The URL must include {fontstack} and {range} tokens. This property is required if any layer uses the text-field layout property. The URL must be absolute, containing the scheme, authority and path components."""
     )
     light: Optional[Light] = Field(description="""The global light source.""")
@@ -28,7 +28,7 @@ class Root(BaseModel):
     )
     sources: Dict[str, AnySource] = Field(description="""Data source specifications.""")
     layers: List[Annotated[Layer, Field(description="""Layers will be drawn in the order of this array.""")]]
-    sprite: Optional[HttpUrl] = Field(
+    sprite: Optional[AnyUrl] = Field(
         description="""A base URL for retrieving the sprite image and metadata. The extensions .png, .json and scale factor @2x.png will be automatically appended. This property is required if any layer uses the background-pattern, fill-pattern, line-pattern, fill-extrusion-pattern, or icon-image properties. The URL must be absolute, containing the scheme, authority and path components."""
     )
     transition: Optional[str] = Field(
