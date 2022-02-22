@@ -42,14 +42,14 @@ class GeoJsonSerializer:
         return GeoJsonFeature(
             type="Feature",
             geometry=GeoJsonGeometry(type=_t, coordinates=_c),
-            properties={k: getattr(feature, k) for k in self.properties},
+            properties={k: getattr(feature, k) for k in self.properties or []},
         )
 
     def features(self):
         return [self._to_feature(feature) for feature in self.queryset]
 
     def to_collection(self):
-        return GeoJsonFeatureCollection(type="FeatureCollection", features=self.to_features())
+        return GeoJsonFeatureCollection(type="FeatureCollection", features=self.features())
 
 
 @dataclass

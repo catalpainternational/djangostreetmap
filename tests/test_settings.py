@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-f_bccd*huje&4i(pip=vljq)ogt#l@5td2y!(m)pk!5($!!&vp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []  # type: List[str]
+ALLOWED_HOSTS = ["*"]  # type: List[str]
 
 
 # Application definition
@@ -165,3 +165,4 @@ LOGGING = {
         "osmflex": {"handlers": ["console"], "level": "DEBUG", "propagate": True},
     },
 }
+
