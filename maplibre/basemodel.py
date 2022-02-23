@@ -27,7 +27,7 @@ class Root(BaseModel):
         description="""Default pitch, in degrees. Zero is perpendicular to the surface, for a look straight down at the map, while a greater value like 60 looks ahead towards the horizon. The style pitch will be used only if the map has not been positioned by other means (e.g. map options or user interaction).""",
     )
     sources: Dict[str, AnySource] = Field(description="""Data source specifications.""")
-    layers: List[Annotated[Layer, Field(description="""Layers will be drawn in the order of this array.""")]]
+    layers: List[Layer]
     sprite: Optional[AnyUrl] = Field(
         description="""A base URL for retrieving the sprite image and metadata. The extensions .png, .json and scale factor @2x.png will be automatically appended. This property is required if any layer uses the background-pattern, fill-pattern, line-pattern, fill-extrusion-pattern, or icon-image properties. The URL must be absolute, containing the scheme, authority and path components."""
     )

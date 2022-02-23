@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Sequence, Union
+from typing import Dict, List, Sequence, TypeVar, Union
 
 
 from django.contrib.gis.db.models import GeometryField
@@ -76,7 +76,7 @@ class MvtQuery:
                 params = sql.Literal(field)
             else:
                 params += sql.Literal(field)  # Name of the key is the same as the field
-            params += expression  # The expression to use as the value for the JSON
+            params += expression  # type: ignore # The expression to use as the value for the JSON
 
         composed_params = params.join(", ")  # type: ignore
 
@@ -158,10 +158,9 @@ class MvtQuery:
             return self.as_mvt().as_string(cursor.cursor)
 
     @classmethod
-    def from_model(cls: 'MvtQuery', model, *args, **kwargs) -> 'MvtQuery':
-        
-        if "field"  in kwargs:
-            field = kwargs.pop('field')
+    def from_model(cls, model, *args, **kwargs) -> "MvtQuery":
+        if "field" in kwargs:
+            field = kwargs.pop("field")
         else:
             for field in model._meta.fields:
                 if isinstance(field, GeometryField):
@@ -169,13 +168,13 @@ class MvtQuery:
                     break
         assert field, f"No geometry field could be identified for {model}"
 
-        if 'attributes' in kwargs:
-            attributes = kwargs.pop('attributes')
+        if "attributes" in kwargs:
+            attributes = kwargs.pop("attributes")
         else:
             attributes = [f.db_column or f.attname for f in model._meta.fields if not isinstance(f, GeometryField)]
 
-        if 'pk' in kwargs:
-            pk = kwargs['pk']
+        if "pk" in kwargs:
+            pk = kwargs["pk"]
         else:
             for pk_field_candidate in model._meta.fields:
                 if pk_field_candidate.primary_key:
@@ -183,13 +182,12 @@ class MvtQuery:
                     break
         assert pk, f"No primary key field could be identified for {model}"
 
-
         return cls(
             table=model._meta.db_table,
-            attributes = attributes,
-            field = field,
-            transform = model._meta.get_field(field).srid != 3857,
-            pk = pk,
-            layer = kwargs.pop('layer', model._meta.model_name),
-            **kwargs
+            attributes=attributes,
+            field=field,
+            transform=model._meta.get_field(field).srid != 3857,
+            pk=pk,
+            layer=kwargs.pop("layer", model._meta.model_name),
+            **kwargs,
         )

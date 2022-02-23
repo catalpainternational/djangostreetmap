@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from unittest import TestCase
 
 from maplibre import layer
@@ -88,6 +89,9 @@ class DemoTilesTest(TestCase):
     in python files
     """
 
+    style_text = ""
+    style: Dict[str, Any] = {}
+
     @classmethod
     def setUpClass(cls) -> None:
 
@@ -117,6 +121,8 @@ class OsmLibertyTest(TestCase):
     """
     Reproduce the code of the "osm Liberty" style
     """
+    style_text = ""
+    style: Dict[str, Any] = {}
 
     @classmethod
     def setUpClass(cls) -> None:

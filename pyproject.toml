@@ -17,7 +17,7 @@ exclude = '''
 
 [tool.poetry]
 name = "djangostreetmap"
-version = "0.1.8"
+version = "0.1.9"
 description = ""
 authors = ["Joshua Brooks <josh.vdbroek@gmail.com>"]
 license = "GPLv3"
@@ -29,7 +29,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
-osmflex = "^0.1.2"
+osmflex = "^0.2.0"
 pydantic = "~1.9.0"
 
 [tool.poetry.dev-dependencies]
@@ -54,6 +54,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
 plugins = ["mypy_django_plugin.main"]
+ignore_missing_imports = true
 
 [tool.django-stubs]
 django_settings_module = "tests.test_settings"

@@ -165,4 +165,3 @@ LOGGING = {
         "osmflex": {"handlers": ["console"], "level": "DEBUG", "propagate": True},
     },
 }
-
