@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "osmflex",
     "tests",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [

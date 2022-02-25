@@ -1,6 +1,6 @@
 import logging
 from dataclasses import asdict
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from django.apps import apps
 from django.contrib.gis.db.models.functions import Centroid, Transform
