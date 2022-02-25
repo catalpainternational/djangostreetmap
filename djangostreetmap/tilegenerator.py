@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-from typing import List, Sequence
+from typing import Dict, List, Sequence, Union
 
+from django.contrib.gis.db.models import GeometryField
 from django.db import connection
 from psycopg2 import sql
 
@@ -29,6 +30,10 @@ class Tile:
 
     @staticmethod
     def tile_envelope_margin() -> sql.Composable:
+        """
+        Returns the ST_TileEnvelope function with a margin
+        Note that the margin is only available in postgis 3.1+
+        """
         return sql.SQL("ST_TileEnvelope(%(zoom)s, %(x)s, %(y)s, margin => (%(buffer)s / %(extent)s))")
 
 
@@ -41,6 +46,7 @@ class MvtQuery:
 
     table: str
     attributes: List[str] = field(default_factory=list)
+    calculated_attributes: Dict[str, Union[sql.Composed, sql.SQL]] = field(default_factory=dict)
     filters: Sequence[sql.Composable] = field(default_factory=list)
     transform: bool = False  # Set to True if source srid is not 3857, but beware performance
     field: str = "geom"
@@ -53,7 +59,7 @@ class MvtQuery:
         """
         Create a "JSONB_BUILD_OBJECT" clause
         """
-        if not self.attributes:
+        if not self.attributes and not self.calculated_attributes:
             return sql.SQL("").format()
         params = None
         for a in self.attributes:
@@ -62,7 +68,16 @@ class MvtQuery:
             else:
                 params += sql.Literal(a)  # Name of the key is the same as the field
             params += sql.Identifier(a)  # The field to use as the value for the JSON
+
+        for field, expression in self.calculated_attributes.items():
+            if not params:
+                params = sql.Literal(field)
+            else:
+                params += sql.Literal(field)  # Name of the key is the same as the field
+            params += expression  # type: ignore # The expression to use as the value for the JSON
+
         composed_params = params.join(", ")  # type: ignore
+
         return sql.SQL(", jsonb_build_object({})").format(composed_params)
 
     @property
@@ -91,11 +106,7 @@ class MvtQuery:
 
     @property
     def where(self) -> sql.Composable:
-        if self.filters:
-            where_clause = sql.SQL(" AND ") + sql.SQL(" AND ").join([self.filters])
-        else:
-            where_clause = sql.SQL("")
-        return where_clause
+        return sql.SQL(" AND ") + sql.SQL(" AND ").join(self.filters) if self.filters else sql.SQL("")
 
     @property
     def as_mvtgeom(self) -> sql.Composable:
@@ -109,17 +120,29 @@ class MvtQuery:
                 buffer => %(buffer)s
             ) AS geom, {pk} {json_attributes}
             FROM {t}
-            WHERE {g} && {m} {where}
+            WHERE {where}
             """
         ).format(
             cg=self.centroid_wrap,
-            g=self.transformed_geom,
-            m=Tile.tile_envelope_margin(),
             e=Tile.tile_envelope(),
             t=sql.Identifier(self.table),
             # Properties of "self"
             pk=sql.Identifier(self.pk),
             json_attributes=self.json_attributes,
+            where=self._feature_query,
+        )
+
+    @property
+    def _feature_query(self) -> sql.Composable:
+        """
+        Return the sql required for the geometry query
+        and other specified filters
+        """
+        return sql.SQL("""{g} && {m} {where}""").format(
+            g=self.transformed_geom,
+            m=Tile.tile_envelope(),
+            # TODO: Re enable the margin when postgis >= 3.1
+            # m=Tile.tile_envelope_margin(),
             where=self.where,
         )
 
@@ -131,3 +154,38 @@ class MvtQuery:
     def debug(self) -> str:
         with connection.cursor() as cursor:
             return self.as_mvt().as_string(cursor.cursor)
+
+    @classmethod
+    def from_model(cls, model, *args, **kwargs) -> "MvtQuery":
+        if "field" in kwargs:
+            field = kwargs.pop("field")
+        else:
+            for field in model._meta.fields:
+                if isinstance(field, GeometryField):
+                    field = field.db_column or field.attname
+                    break
+        assert field, f"No geometry field could be identified for {model}"
+
+        if "attributes" in kwargs:
+            attributes = kwargs.pop("attributes")
+        else:
+            attributes = [f.db_column or f.attname for f in model._meta.fields if not isinstance(f, GeometryField)]
+
+        if "pk" in kwargs:
+            pk = kwargs["pk"]
+        else:
+            for pk_field_candidate in model._meta.fields:
+                if pk_field_candidate.primary_key:
+                    pk = pk_field_candidate.db_column or pk_field_candidate.attname
+                    break
+        assert pk, f"No primary key field could be identified for {model}"
+
+        return cls(
+            table=model._meta.db_table,
+            attributes=attributes,
+            field=field,
+            transform=model._meta.get_field(field).srid != 3857,
+            pk=pk,
+            layer=kwargs.pop("layer", model._meta.model_name),
+            **kwargs,
+        )

@@ -7,8 +7,9 @@ from .views import (
     ExampleMapView,
     Hospitals,
     LandLayer,
-    MajorRoads,
-    MinorRoads,
+    MapStyle,
+    PoiLayer,
+    Roads,
 )
 
 app_name = "djangostreetmap"
@@ -26,12 +27,13 @@ urlpatterns = [
     # path("facebookai/", FacebookAiLayerView.as_view(), name="facebookai"),
     path("buildings/", BuildingPolygon.as_view(), name="buildings"),
     path("buildings/<int:zoom>/<int:x>/<int:y>.pbf", cache_page(60 * 15)(BuildingPolygon.as_view()), name="buildings"),
-    path("roads/", MajorRoads.as_view(), name="roads"),
-    path("roads/<int:zoom>/<int:x>/<int:y>.pbf", cache_page(60 * 15)(MajorRoads.as_view()), name="roads"),
+    path("roads/", Roads.as_view(), name="roads"),
+    path("roads/<int:zoom>/<int:x>/<int:y>.pbf", cache_page(60 * 15)(Roads.as_view()), name="roads"),
     path("hospitals", Hospitals.as_view(), name="hospitals"),
     path("airports", Aeroways.as_view(), name="aeroways"),
-    path("minor_roads/", MinorRoads.as_view(), name="minor_roads"),
-    path("minor_roads/<int:zoom>/<int:x>/<int:y>.pbf", cache_page(60 * 15)(MinorRoads.as_view()), name="minor_roads"),
     path("land/", cache_page(60 * 15)(LandLayer.as_view()), name="land"),
     path("land/<int:zoom>/<int:x>/<int:y>.pbf", cache_page(60 * 15)(LandLayer.as_view()), name="land"),
+    path("poi/", cache_page(60 * 15)(PoiLayer.as_view()), name="poi"),
+    path("poi/<int:zoom>/<int:x>/<int:y>.pbf", cache_page(60 * 15)(PoiLayer.as_view()), name="poi"),
+    path("style", MapStyle.as_view(), name="map_style"),
 ]

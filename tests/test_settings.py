@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-f_bccd*huje&4i(pip=vljq)ogt#l@5td2y!(m)pk!5($!!&vp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []  # type: List[str]
+ALLOWED_HOSTS = ["*"]  # type: List[str]
 
 
 # Application definition
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "osmflex",
     "tests",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
@@ -85,14 +86,22 @@ WSGI_APPLICATION = "djangostreetmap.wsgi.application"
 
 
 # Temporary:
-# docker run --rm -p 49155:5432 --name=djangostreetmap -e POSTGRES_PASSWORD=post1234 postgis/postgis:14-3.2 -c fsync=off -c shared_buffers=4096MB
+"""
+docker run --rm \
+    -p 49156:5432 \
+    --name=djangostreetmap \
+    -e POSTGRES_PASSWORD=post1234 \
+    postgis/postgis:14-3.2 \
+    -c fsync=off
+"""
+
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
         "USER": "postgres",
         "PASSWORD": "post1234",
         "HOST": "localhost",
-        "PORT": "49155",
+        "PORT": "49156",
         "NAME": "postgres",
     }
 }
