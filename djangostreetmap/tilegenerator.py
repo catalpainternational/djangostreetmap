@@ -1,11 +1,9 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Sequence, TypeVar, Union
-
+from typing import Dict, List, Sequence, Union
 
 from django.contrib.gis.db.models import GeometryField
 from django.db import connection
 from psycopg2 import sql
-
 
 # To time mvt queries uncomment the following
 # from .timer import Timer

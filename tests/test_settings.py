@@ -86,15 +86,23 @@ WSGI_APPLICATION = "djangostreetmap.wsgi.application"
 
 
 # Temporary:
-# docker run --rm -p 49155:5432 --name=djangostreetmap -e POSTGRES_PASSWORD=post1234 postgis/postgis:14-3.2 -c fsync=off -c shared_buffers=4096MB
+"""
+docker run --rm \
+    -p 49156:5432 \
+    --name=djangostreetmap \
+    -e POSTGRES_PASSWORD=post1234 \
+    postgis/postgis:14-3.2 \
+    -c fsync=off
+"""
+
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "USER": "dird",
-        "PASSWORD": "dird",
+        "USER": "postgres",
+        "PASSWORD": "post1234",
         "HOST": "localhost",
         "PORT": "49156",
-        "NAME": "dird_db",
+        "NAME": "postgres",
     }
 }
 # Password validation

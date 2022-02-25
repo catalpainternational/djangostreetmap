@@ -1,5 +1,6 @@
-from importlib import resources
 import json
+from importlib import resources
+
 from maplibre.basemodel import Root
 
 if __name__ == "__main__":

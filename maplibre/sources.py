@@ -1,11 +1,12 @@
-from . import layer
-from typing import Dict, List, Literal, Optional, Tuple, Union
-from typing_extensions import Annotated
-from pydantic import BaseModel, Field, AnyUrl
-
 from enum import Enum
-from pydantic import HttpUrl
+from typing import Dict, List, Literal, Optional, Tuple, Union
+
+from pydantic import AnyUrl, BaseModel, Field, HttpUrl
+from typing_extensions import Annotated
+
 from djangostreetmap.annotations import GeoJsonFeature, GeoJsonFeatureCollection
+
+from . import layer
 
 """
 Sources state which data the map should display.
