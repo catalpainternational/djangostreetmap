@@ -238,6 +238,7 @@ class MapStyle(View):
 
     def get(self, request: HttpRequest, *args, **kwargs):
 
+        font = ["Roboto Regular"]
         # map = Root()
         road_source = sources.Vector(type="vector", tiles=[f"{request.scheme}://{request.get_host()}{reverse('djangostreetmap:roads')}{{z}}/{{x}}/{{y}}.pbf"])
         land_source = sources.Vector(type="vector", tiles=[f"{request.scheme}://{request.get_host()}{reverse('djangostreetmap:land')}{{z}}/{{x}}/{{y}}.pbf"])
@@ -354,7 +355,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
@@ -370,7 +371,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
@@ -386,7 +387,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
@@ -402,7 +403,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
@@ -418,7 +419,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
@@ -434,7 +435,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
@@ -450,7 +451,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
