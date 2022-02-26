@@ -1,0 +1,7 @@
+[run]
+branch = True
+omit = src/db/env.py,src/db/versions/*  # define paths to omit
+
+[report]
+show_missing = True
+skip_covered = True
