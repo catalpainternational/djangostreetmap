@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/joshbrooks/djangostreetmap/branch/main/graph/badge.svg?token=MXcJUkbOMf)](https://codecov.io/gh/joshbrooks/djangostreetmap)
+
 # DjangoStreetMap
 
 DjangSstreetMap is a Django application to load OSM data into a postgis database and deliver OSM data as
