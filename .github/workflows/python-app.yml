@@ -34,16 +34,23 @@ jobs:
         poetry run flake8 .
     - name: Test with pytest
       if: always()
-      run: |
-        poetry run pytest
+      run: poetry run pytest --cov
+
+    - name: Produce coverage XML
+      run: poetry run coverage xml
+
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v2
+      with:
+        fail_ci_if_error: true
+
     - name: Test mypy
       if: always()
-      run: |
-        poetry run mypy .
+      run:  poetry run mypy .
+
     - name: Test with pytest
       if: always()
-      run: |
-        poetry run black --check .
+      run: poetry run black --check .
 
     services:
         postgres:
