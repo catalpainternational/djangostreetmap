@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Protocol, Sequence, Tuple, Union
 
 from django.db import models
 
@@ -63,3 +63,26 @@ class MultiGeoJsonSerializer:
             features.extend(list(s.features()))
 
         return GeoJsonFeatureCollection(type="FeatureCollection", features=features)
+
+
+class TileCache(Protocol):
+    """
+    Typing protocol for a generic "Cache" method
+    The intention of this is to ensure that whichever cache method
+    we use for an MvtTile, the cache has at least the methods which
+    we access in our code
+    """
+
+    def get(self, key, default=None, version=None):
+        """
+        Fetch a given key from the cache. If the key does not exist, return
+        default, which itself defaults to None.
+        """
+        pass
+
+    def set(self, key, value, timeout=300, version=None):
+        """
+        Set a value in the cache. If timeout is given, use that timeout for the
+        key; otherwise use the default cache timeout.
+        """
+        raise NotImplementedError("subclasses of BaseCache must provide a set() method")
