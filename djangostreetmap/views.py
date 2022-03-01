@@ -3,7 +3,6 @@ import logging
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
-import sqlparse
 from django.apps import apps
 from django.contrib.gis.db.models.functions import Centroid, Transform
 from django.db import connection
@@ -75,7 +74,7 @@ class TileLayerView(View):
                     key: Optional[str] = None
 
                     if self.tilecache:
-                        key = hashlib.sha256(sqlparse.format(cursor.mogrify(query, params), reindent=True, keyword_case="upper").encode()).hexdigest()[:8]
+                        key = hashlib.sha256(f"{query}, {params}".encode()).hexdigest()[:8]
 
                     if key:
                         content_bytes: Optional[bytes] = self.tilecache.get(key)
