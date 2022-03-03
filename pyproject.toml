@@ -58,6 +58,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
 plugins = ["mypy_django_plugin.main"]
+ignore_missing_imports = true
 
 [tool.django-stubs]
 django_settings_module = "tests.test_settings"
