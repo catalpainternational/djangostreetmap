@@ -1,3 +1,4 @@
+import hashlib
 import logging
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
@@ -15,7 +16,11 @@ from osmflex.models import AmenityPoint, OsmLine, OsmPoint, OsmPolygon, RoadLine
 from psycopg2 import sql
 
 from djangostreetmap import models
-from djangostreetmap.annotations import GeoJsonSerializer, MultiGeoJsonSerializer
+from djangostreetmap.annotations import (
+    GeoJsonSerializer,
+    MultiGeoJsonSerializer,
+    TileCache,
+)
 from djangostreetmap.functions import AsFeatureCollection, Intersects
 from djangostreetmap.tilegenerator import MvtQuery, Tile
 from maplibre import layer, sources
@@ -45,6 +50,7 @@ class TileLayerView(View):
     """
 
     layers: List[MvtQuery] = []
+    tilecache: Optional[TileCache] = None
 
     def get_layers(self, tile: Tile) -> List[MvtQuery]:
         """
@@ -64,18 +70,35 @@ class TileLayerView(View):
                 query = query_layer.as_mvt()
                 # Uncomment to see the SQL which is run
                 # logger.info(query.as_string(cursor.cursor))
-                # with Timer(name="tile generator", logger=logger.info):
-                tile_response: Optional[Sequence] = None
-                try:
-                    cursor.execute(query, params)  # type: ignore
-                    tile_response = cursor.fetchone()
-                except Exception as E:
-                    logger.error(f"{E}")
-                    logger.info(query.as_string(cursor.cursor))
-                if not tile_response:
-                    continue
-                content = tile_response[0]
-                tiles += content
+                with Timer(name="tile generator", logger=logger.info):
+                    tile_response: Optional[Sequence] = None
+                    key: Optional[str] = None
+
+                    if self.tilecache:
+                        key = hashlib.sha256(f"{query}, {params}".encode()).hexdigest()[:8]
+
+                    if key:
+                        content_bytes: Optional[bytes] = self.tilecache.get(key)
+                        if content_bytes is not None:
+                            logger.info("Cached tile returning")
+                            tiles.append(content_bytes)
+                            continue
+                        logger.info("No tile cached")
+
+                    try:
+                        cursor.execute(query, params)  # type: ignore
+                        tile_response = cursor.fetchone()
+                    except Exception as E:
+                        logger.error(f"{E}")
+                        logger.info(query.as_string(cursor.cursor))
+                    if not tile_response:
+                        continue
+                    content: memoryview = tile_response[0]
+                    content_bytes: bytes = content.tobytes()
+                    tiles.append(content_bytes)
+
+                    if key:
+                        self.tilecache.set(key, content_bytes)
 
             return tiles
 
@@ -239,6 +262,7 @@ class MapStyle(View):
 
     def get(self, request: HttpRequest, *args, **kwargs):
 
+        font = ["Roboto Regular"]
         # map = Root()
         road_source = sources.Vector(type="vector", tiles=[f"{request.scheme}://{request.get_host()}{reverse('djangostreetmap:roads')}{{z}}/{{x}}/{{y}}.pbf"])
         land_source = sources.Vector(type="vector", tiles=[f"{request.scheme}://{request.get_host()}{reverse('djangostreetmap:land')}{{z}}/{{x}}/{{y}}.pbf"])
@@ -355,7 +379,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
@@ -371,7 +395,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
@@ -387,7 +411,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
@@ -403,7 +427,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
@@ -419,7 +443,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
@@ -435,7 +459,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },
@@ -451,7 +475,7 @@ class MapStyle(View):
                     "symbol-placement": "line",
                     "text-anchor": "center",
                     "text-field": "{name}",
-                    "text-font": ["Roboto Regular"],
+                    "text-font": font,
                     "text-offset": [0, 0.15],
                     "text-size": {"base": 1, "stops": [[13, 12], [14, 13]]},
                 },

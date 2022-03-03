@@ -3,11 +3,16 @@ from typing import List, Tuple
 
 from django.db import connection
 from django.db.models import Q
+from http import HTTPStatus
+
+from django.contrib.gis.geos import Point
 from django.test import TestCase
 from osmflex.models import RoadLine
 from psycopg2 import sql
+from django.urls import reverse
 
 from djangostreetmap.tilegenerator import MvtQuery, Tile
+from tests.models import BasicPoint
 
 # This reference is from /14/14891/8624, around 'Five Mile', Port Moresby
 port_moresby = Tile(zoom=14, x=14891, y=8624)
@@ -100,3 +105,18 @@ class FromQueryTestCase(TestCase):
             tile_response = cursor.fetchone()
             content = tile_response[0]  # type: memoryview
         return bytes(content)
+
+class SerializerTestCase(TestCase):
+    def setUp(self) -> None:
+        BasicPoint.objects.create(name="Pointy point point", geom=Point(1, 1))
+        return super().setUp()
+
+    def test_serialize(self):
+        url = reverse("test_serializer")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_multi_serialize(self):
+        url = reverse("test_multi_serializer")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, HTTPStatus.OK)

@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/joshbrooks/djangostreetmap/branch/main/graph/badge.svg?token=MXcJUkbOMf)](https://codecov.io/gh/joshbrooks/djangostreetmap)
+
 # DjangoStreetMap
 
 DjangSstreetMap is a Django application to load OSM data into a postgis database and deliver OSM data as
@@ -19,6 +21,16 @@ This is a Django application to
 
 Tile generation is much faster when geometry is in srid=3857 (or maybe with an index in that SRID?)
 
+## Prerequisites
+
+You need the `gdal` libraries installed
+
+On Ubuntu:
+```
+sudo apt install binutils libproj-dev gdal-bin
+```
+
+Otherwise refer to the Django docs "Installing geospatial libraries"
 ## Adding to a Project
 
 If necessary install psycopg2 in your env
@@ -135,6 +147,10 @@ wget https://download.geofabrik.de/australia-oceania/papua-new-guinea-latest.osm
 or
 
 wget https://download.geofabrik.de/asia/east-timor-latest.osm.pbf
+
+### Installing osm2psql
+
+To run the management command below you'll need an `osm2pgsql` version of around 1.3 or greater. This is not available in the ubuntu package manager (yet)...
 
 ### Import Data
 
