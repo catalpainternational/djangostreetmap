@@ -1,15 +1,14 @@
 from dataclasses import asdict
+from http import HTTPStatus
 from typing import List, Tuple
 
+from django.contrib.gis.geos import Point
 from django.db import connection
 from django.db.models import Q
-from http import HTTPStatus
-
-from django.contrib.gis.geos import Point
 from django.test import TestCase
+from django.urls import reverse
 from osmflex.models import RoadLine
 from psycopg2 import sql
-from django.urls import reverse
 
 from djangostreetmap.tilegenerator import MvtQuery, Tile
 from tests.models import BasicPoint
@@ -105,6 +104,7 @@ class FromQueryTestCase(TestCase):
             tile_response = cursor.fetchone()
             content = tile_response[0]  # type: memoryview
         return bytes(content)
+
 
 class SerializerTestCase(TestCase):
     def setUp(self) -> None:

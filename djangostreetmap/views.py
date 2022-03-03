@@ -77,7 +77,7 @@ class TileLayerView(View):
                     if self.tilecache:
                         key = hashlib.sha256(f"{query}, {params}".encode()).hexdigest()[:8]
 
-                    if key:
+                    if self.tilecache and key:
                         content_bytes: Optional[bytes] = self.tilecache.get(key)
                         if content_bytes is not None:
                             logger.info("Cached tile returning")
@@ -94,11 +94,12 @@ class TileLayerView(View):
                     if not tile_response:
                         continue
                     content: memoryview = tile_response[0]
-                    content_bytes: bytes = content.tobytes()
-                    tiles.append(content_bytes)
+                    new_content_bytes: bytes = content.tobytes()
+                    if new_content_bytes:
+                        tiles.append(new_content_bytes)
 
-                    if key:
-                        self.tilecache.set(key, content_bytes)
+                    if self.tilecache and key:
+                        self.tilecache.set(key, new_content_bytes)
 
             return tiles
 

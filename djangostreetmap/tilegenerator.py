@@ -2,11 +2,8 @@ import re
 from dataclasses import dataclass, field
 from itertools import count
 from typing import Any, Dict, Iterable, List, Sequence, Tuple, Union
-from typing import Dict, List, Sequence, Union
 
 from django.contrib.gis.db.models import GeometryField
-from django.contrib.gis.db.models import GeometryField
-from django.db import connection
 from psycopg2 import sql
 
 # To time mvt queries uncomment the following
@@ -88,7 +85,6 @@ class MvtQuery:
                 params += sql.Literal(field)  # Name of the key is the same as the field
             assert params
             params += expression  # The expression to use as the value for the JSON
-
 
         for field, expression in self.calculated_attributes.items():
             if not params:
