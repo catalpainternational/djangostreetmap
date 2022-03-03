@@ -1,13 +1,12 @@
-from typing import Tuple
-from django.test import TestCase
-from osmflex.models import RoadLine
-
 from dataclasses import asdict
-
-from djangostreetmap.tilegenerator import MvtQuery, Tile
-from psycopg2 import sql
+from typing import Tuple
 
 from django.db import connection
+from django.test import TestCase
+from osmflex.models import RoadLine
+from psycopg2 import sql
+
+from djangostreetmap.tilegenerator import MvtQuery, Tile
 
 # Create your tests here.
 
@@ -91,6 +90,22 @@ class FromQueryTestCase(TestCase):
             # Count the items
 
             cursor.execute(MvtQuery.from_model(RoadLine).as_mvt(), asdict(port_moresby))
+
+            tile_response = cursor.fetchone()
+            content = tile_response[0]  # type: memoryview
+        print(bytes(content).decode())
+
+    def test_from_qs(self):
+
+        port_moresby = Tile(zoom=14, x=14891, y=8624)
+
+        from djangostreetmap.tilegenerator import MvtQuery
+
+        with connection.cursor() as cursor:
+
+            # Count the items
+
+            cursor.execute(MvtQuery.from_queryset(RoadLine.objects.filter(pk__in=[1])).as_mvt(), asdict(port_moresby))
 
             tile_response = cursor.fetchone()
             content = tile_response[0]  # type: memoryview

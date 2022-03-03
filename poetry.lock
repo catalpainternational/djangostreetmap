@@ -303,7 +303,7 @@ python-versions = "*"
 
 [[package]]
 name = "osmflex"
-version = "0.2.0"
+version = "0.2.2"
 description = ""
 category = "main"
 optional = false
@@ -575,7 +575,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "virtualenv"
-version = "20.13.1"
+version = "20.13.2"
 description = "Virtual Python Environment builder"
 category = "dev"
 optional = false
@@ -594,7 +594,7 @@ testing = ["coverage (>=4)", "coverage-enable-subprocess (>=1)", "flaky (>=3)", 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<4.0"
-content-hash = "93c0c8c35d16447d91809ef50707bdbae05f354839bb2e917a95dbfca02fc5f7"
+content-hash = "6d360674e96caf2af58b0ccd317f98a0e79480034cbfc67fecb101900c5d7c6a"
 
 [metadata.files]
 asgiref = [
@@ -737,8 +737,8 @@ nodeenv = [
     {file = "nodeenv-1.6.0.tar.gz", hash = "sha256:3ef13ff90291ba2a4a7a4ff9a979b63ffdd00a464dbe04acf0ea6471517a4c2b"},
 ]
 osmflex = [
-    {file = "osmflex-0.2.0-py3-none-any.whl", hash = "sha256:98e26e57cda11badfb227735688cc17992a916781c5896acce70cc831d04ca12"},
-    {file = "osmflex-0.2.0.tar.gz", hash = "sha256:454e45e841bb22511515bd73beb309d6ace20eee0e6d13033eeb3489a6b20720"},
+    {file = "osmflex-0.2.2-py3-none-any.whl", hash = "sha256:3dbb51576752898cb4f9ef6e85cb3baf87024962e2441121e9efe8f07ec6a448"},
+    {file = "osmflex-0.2.2.tar.gz", hash = "sha256:91a0b7754d917f2ca5d78c027b6c665a2d3a662083041cc820be0af177ee0626"},
 ]
 packaging = [
     {file = "packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},
@@ -935,6 +935,6 @@ urllib3 = [
     {file = "urllib3-1.26.8.tar.gz", hash = "sha256:0e7c33d9a63e7ddfcb86780aac87befc2fbddf46c58dbb487e0855f7ceec283c"},
 ]
 virtualenv = [
-    {file = "virtualenv-20.13.1-py2.py3-none-any.whl", hash = "sha256:45e1d053cad4cd453181ae877c4ffc053546ae99e7dd049b9ff1d9be7491abf7"},
-    {file = "virtualenv-20.13.1.tar.gz", hash = "sha256:e0621bcbf4160e4e1030f05065c8834b4e93f4fcc223255db2a823440aca9c14"},
+    {file = "virtualenv-20.13.2-py2.py3-none-any.whl", hash = "sha256:e7b34c9474e6476ee208c43a4d9ac1510b041c68347eabfe9a9ea0c86aa0a46b"},
+    {file = "virtualenv-20.13.2.tar.gz", hash = "sha256:01f5f80744d24a3743ce61858123488e91cb2dd1d3bdf92adaf1bba39ffdedf0"},
 ]

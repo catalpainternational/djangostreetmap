@@ -1,10 +1,10 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
-from typing_extensions import Annotated
-from pydantic import BaseModel, AnyUrl, Field, validator
-from .sources import AnySource
+
+from pydantic import AnyUrl, BaseModel, Field, validator
 
 from .layer import Layer
 from .light import Light
+from .sources import AnySource
 
 
 class Root(BaseModel):

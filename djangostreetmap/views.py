@@ -6,21 +6,20 @@ from django.apps import apps
 from django.contrib.gis.db.models.functions import Centroid, Transform
 from django.db import connection
 from django.db.models import Model
-from django.http import JsonResponse
+from django.http import HttpRequest, JsonResponse
 from django.http.response import HttpResponse
-from django.http import HttpRequest
 from django.urls import reverse
 from django.views import View
 from django.views.generic.base import TemplateView
-from osmflex.models import OsmLine, OsmPoint, OsmPolygon, RoadLine, AmenityPoint
+from osmflex.models import AmenityPoint, OsmLine, OsmPoint, OsmPolygon, RoadLine
 from psycopg2 import sql
 
 from djangostreetmap import models
 from djangostreetmap.annotations import GeoJsonSerializer, MultiGeoJsonSerializer
 from djangostreetmap.functions import AsFeatureCollection, Intersects
 from djangostreetmap.tilegenerator import MvtQuery, Tile
-from maplibre.basemodel import Root
 from maplibre import layer, sources
+from maplibre.basemodel import Root
 from maplibre.layer import Layer as L
 
 from .timer import Timer

@@ -2,7 +2,7 @@ from ast import Expression
 from typing import List, Union
 
 from django.contrib.gis.db import models
-from django.db.models import Func, Value, F
+from django.db.models import F, Func, Value
 
 
 class JSONObject(Func):

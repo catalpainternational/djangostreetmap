@@ -95,8 +95,8 @@ class DemoTilesTest(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
 
-        from importlib import resources
         import json
+        from importlib import resources
 
         cls.style_text = resources.read_text("maplibre", "style.json")
         cls.style = json.loads(cls.style_text)
@@ -121,14 +121,15 @@ class OsmLibertyTest(TestCase):
     """
     Reproduce the code of the "osm Liberty" style
     """
+
     style_text = ""
     style: Dict[str, Any] = {}
 
     @classmethod
     def setUpClass(cls) -> None:
 
-        from importlib import resources
         import json
+        from importlib import resources
 
         cls.style_text = resources.read_text("maplibre", "osm_liberty.json")
         cls.style = json.loads(cls.style_text)

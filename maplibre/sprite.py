@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
 from typing import Optional, Tuple
+
+from pydantic import BaseModel, Field
 
 """
 A style's sprite property supplies a URL template for loading small
