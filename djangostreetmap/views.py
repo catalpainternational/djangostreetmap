@@ -60,6 +60,7 @@ class TileLayerView(View):
         with connection.cursor() as cursor:
             tiles: List[bytes] = []
             for query_layer in self.get_layers(tile):
+                params.update(query_layer.query_params)
                 query = query_layer.as_mvt()
                 # Uncomment to see the SQL which is run
                 # logger.info(query.as_string(cursor.cursor))
