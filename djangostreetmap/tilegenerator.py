@@ -61,7 +61,6 @@ class MvtQuery:
     field: str = "geom"
     pk: str = "id"
     layer: str = "default"
-    centroid: bool = False
 
     @property
     def json_attributes(self) -> sql.Composed:
@@ -86,13 +85,6 @@ class MvtQuery:
             assert params
             params += expression  # The expression to use as the value for the JSON
 
-        for field, expression in self.calculated_attributes.items():
-            if not params:
-                params = sql.Literal(field)
-            else:
-                params += sql.Literal(field)  # Name of the key is the same as the field
-            params += expression  # type: ignore # The expression to use as the value for the JSON
-
         composed_params = params.join(", ")  # type: ignore
 
         return sql.SQL(", jsonb_build_object({})").format(composed_params)
@@ -107,12 +99,6 @@ class MvtQuery:
         if self.transform:
             template = f"ST_TRANSFORM({template}, 3857)"
         return sql.SQL(template).format(field=sql.Identifier(self.field))
-
-    @property
-    def centroid_wrap(self) -> sql.Composable:
-        if self.centroid:
-            return sql.SQL("ST_CENTROID({})").format(self.transformed_geom)
-        return self.transformed_geom
 
     @property
     def alias(self) -> sql.Composable:
@@ -139,7 +125,7 @@ class MvtQuery:
             WHERE {where}
             """
         ).format(
-            cg=self.centroid_wrap,
+            cg=self.transformed_geom,
             e=Tile.tile_envelope(),
             t=sql.Identifier(self.table) if isinstance(self.table, str) else self.table,
             # Properties of "self"
@@ -184,28 +170,36 @@ class MvtQuery:
         attributes = kwargs.pop("attributes", get_model_attributes(model))
         pk = kwargs.get("pk", get_model_pk_field(model))
         transform = model._meta.get_field(field).srid != 3857
-
         return cls(table=model._meta.db_table, attributes=attributes, field=field, transform=transform, pk=pk, layer=kwargs.pop("layer", model._meta.model_name), **kwargs)
 
     @classmethod
-    def from_queryset(cls, queryset, *args, **kwargs) -> "MvtQuery":
+    def from_queryset(cls, queryset, field: str = "geom", attributes: List[str] = ["id"], pk: str = "id", transform: bool = False, *args, **kwargs) -> "MvtQuery":
         """
         Takes as input a Django queryset
+        This requires more configureation than calling from a model
+        as querysets are a little harder to introspect
         """
+        # Replace some parts of the Django sql
+        # to make it work as a CTE
         django_sql, query_params = convert_to_positional_query(queryset)
-        instance = cls.from_model(queryset.model, *args, **kwargs)
-        # Replace the 'table' str with our actual code
+
+        # Our django queryset will become a common table expression AKA "with" statement
+        cte_name = sql.Identifier("django_queryset")
         if django_sql.startswith("SELECT"):
             django_sql = django_sql[6:]
+        django_sql = django_sql.replace("::bytea", "")
 
-        # Django's place holders in querysets are positional, not named
-        # That causes conflicts later - so rewrite these as named arguments
-
-        # We could also do a `.mogrify()` here
-
-        instance.query_params = query_params
-        instance.table = sql.Identifier("django_queryset")
-        instance.ctes = ((sql.Identifier("django_queryset"), sql.SQL(django_sql)),)
+        instance = cls(
+            table=cte_name,
+            ctes=((cte_name, sql.SQL(django_sql)),),
+            query_params=query_params,
+            attributes=attributes,
+            field=field,
+            transform=transform,
+            pk=pk,
+            layer=kwargs.pop("layer", queryset.model._meta.model_name),
+            **kwargs,
+        )
         return instance
 
 
@@ -248,38 +242,3 @@ def convert_to_positional_query(queryset):
     positional_sql = re.sub("%s", lambda x: f"%(param_{next(c)})s", django_sql)
     query_params = {f"param_{i}": param for i, param in enumerate(args)}
     return positional_sql, query_params
-
-    @classmethod
-    def from_model(cls, model, *args, **kwargs) -> "MvtQuery":
-        if "field" in kwargs:
-            field = kwargs.pop("field")
-        else:
-            for field in model._meta.fields:
-                if isinstance(field, GeometryField):
-                    field = field.db_column or field.attname
-                    break
-        assert field, f"No geometry field could be identified for {model}"
-
-        if "attributes" in kwargs:
-            attributes = kwargs.pop("attributes")
-        else:
-            attributes = [f.db_column or f.attname for f in model._meta.fields if not isinstance(f, GeometryField)]
-
-        if "pk" in kwargs:
-            pk = kwargs["pk"]
-        else:
-            for pk_field_candidate in model._meta.fields:
-                if pk_field_candidate.primary_key:
-                    pk = pk_field_candidate.db_column or pk_field_candidate.attname
-                    break
-        assert pk, f"No primary key field could be identified for {model}"
-
-        return cls(
-            table=model._meta.db_table,
-            attributes=attributes,
-            field=field,
-            transform=model._meta.get_field(field).srid != 3857,
-            pk=pk,
-            layer=kwargs.pop("layer", model._meta.model_name),
-            **kwargs,
-        )
