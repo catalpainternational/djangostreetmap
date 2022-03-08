@@ -45,8 +45,10 @@ class Root(BaseModel):
         """
         Ensure that the reference exists in the `sources` map
         """
-
-        sources = values["sources"]  # type: Dict[str, AnySource]
+        try:
+            sources = values["sources"]  # type: Dict[str, AnySource]
+        except KeyError:  # this happens where there is a validation error in "sources"
+            return layers
 
         for layer in layers:
 
