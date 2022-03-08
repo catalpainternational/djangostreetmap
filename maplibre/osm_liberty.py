@@ -1,15 +1,15 @@
-from maplibre.layer import Layer as L
 from maplibre.basemodel import Root
+from maplibre.layer import Layer as L
 from maplibre.sources import Source
 
 sources = {
     "openmaptiles": Source(type="vector", url="https://api.maptiler.com/tiles/v3/tiles.json?key={key}"),
     "natural_earth_shaded_relief": Source(
-        maxzoom = 6,
-        tileSize = 256,
-        tiles = ["https://klokantech.github.io/naturalearthtiles/tiles/natural_earth_2_shaded_relief.raster/{z}/{x}/{y}.png"],
-        type = "raster",
-    )
+        maxzoom=6,
+        tileSize=256,
+        tiles=["https://klokantech.github.io/naturalearthtiles/tiles/natural_earth_2_shaded_relief.raster/{z}/{x}/{y}.png"],
+        type="raster",
+    ),
 }
 
 layers = [
@@ -943,11 +943,11 @@ layers = [
 ]
 
 map = Root(
-    version = 8,
-    name = "OSM Liberty",
-    metadata = {"maputnik:license": "https://github.com/maputnik/osm-liberty/blob/gh-pages/LICENSE.md", "maputnik:renderer": "mbgljs", "openmaptiles:version": "3.x"},
-    sprite = "https://maputnik.github.io/osm-liberty/sprites/osm-liberty",
-    glyphs = "https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key={key}",
-    sources = sources,
-    layers = layers
+    version=8,
+    name="OSM Liberty",
+    metadata={"maputnik:license": "https://github.com/maputnik/osm-liberty/blob/gh-pages/LICENSE.md", "maputnik:renderer": "mbgljs", "openmaptiles:version": "3.x"},
+    sprite="https://maputnik.github.io/osm-liberty/sprites/osm-liberty",
+    glyphs="https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key={key}",
+    sources=sources,
+    layers=layers,
 )

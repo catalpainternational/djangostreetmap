@@ -17,10 +17,12 @@ exclude = '''
 
 [tool.poetry]
 name = "djangostreetmap"
-version = "0.2.2"
-description = ""
+version = "0.2.4"
+description = "Deliver OpenstreetMap data in GeoJSON and MVT tile formats"
 authors = ["Joshua Brooks <josh.vdbroek@gmail.com>"]
-license = "GPLv3"
+license = "LGPL-3.0-or-later"
+homepage = "https://github.com/joshbrooks/djangostreetmap"
+readme = "README.md"
 
 packages = [
   { include = "djangostreetmap" },

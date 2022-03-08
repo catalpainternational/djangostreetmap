@@ -7,6 +7,7 @@ from djangostreetmap.models import SimplifiedLandPolygon
 This data can be sourced from https://osmdata.openstreetmap.de/data/land-polygons.html
 """
 
+
 class Command(BaseCommand):
     help = "Import polygons to the Simplified table"
 

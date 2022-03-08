@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass, field
 from itertools import count
-from typing import Any, Dict, Iterable, List, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 from django.contrib.gis.db.models import GeometryField
 from psycopg2 import sql
@@ -173,7 +173,7 @@ class MvtQuery:
         return cls(table=model._meta.db_table, attributes=attributes, field=field, transform=transform, pk=pk, layer=kwargs.pop("layer", model._meta.model_name), **kwargs)
 
     @classmethod
-    def from_queryset(cls, queryset, field: str = "geom", attributes: List[str] = ["id"], pk: str = "id", transform: bool = False, *args, **kwargs) -> "MvtQuery":
+    def from_queryset(cls, queryset, field: str = "geom", attributes: Optional[List[str]] = None, pk: Optional[str] = None, transform: Optional[bool] = False, *args, **kwargs) -> "MvtQuery":
         """
         Takes as input a Django queryset
         This requires more configureation than calling from a model
@@ -188,6 +188,14 @@ class MvtQuery:
         if django_sql.startswith("SELECT"):
             django_sql = django_sql[6:]
         django_sql = django_sql.replace("::bytea", "")
+
+        # When primary key is not specified, detect it from the model
+        # Note that if using a queryset this means you need to include it in .values()
+        if not pk:
+            pk = get_model_pk_field(queryset.model)
+
+        if not attributes:
+            attributes = [pk]
 
         instance = cls(
             table=cte_name,
