@@ -173,7 +173,9 @@ class MvtQuery:
         return cls(table=model._meta.db_table, attributes=attributes, field=field, transform=transform, pk=pk, layer=kwargs.pop("layer", model._meta.model_name), **kwargs)
 
     @classmethod
-    def from_queryset(cls, queryset, field: str = "geom", attributes: Optional[List[str]] = None, pk: Optional[str] = None, transform: Optional[bool] = False, *args, **kwargs) -> "MvtQuery":
+    def from_queryset(
+        cls, queryset, field: str = "geom", attributes: Optional[List[str]] = None, pk: Optional[str] = None, transform: Optional[bool] = False, *args, **kwargs
+    ) -> "MvtQuery":
         """
         Takes as input a Django queryset
         This requires more configureation than calling from a model

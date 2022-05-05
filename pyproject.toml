@@ -17,7 +17,7 @@ exclude = '''
 
 [tool.poetry]
 name = "djangostreetmap"
-version = "0.2.4"
+version = "0.2.5"
 description = "Deliver OpenstreetMap data in GeoJSON and MVT tile formats"
 authors = ["Joshua Brooks <josh.vdbroek@gmail.com>"]
 license = "LGPL-3.0-or-later"

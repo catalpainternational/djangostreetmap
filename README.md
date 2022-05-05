@@ -35,15 +35,9 @@ Otherwise refer to the Django docs "Installing geospatial libraries"
 
 If necessary install psycopg2 in your env
 
-In your existing Django project, add this repo as a submodule:
-
-```sh
-git submodule add git@github.com:joshbrooks/djangostreetmap.git djangostreetmap
-```
-
-Set the settings of new project to match the above
-
 Extend installed_apps with the following apps:
+
+`pip install osmflex`
 
 ```python
 [
@@ -70,7 +64,27 @@ CACHES = {
 
 ## Running faster in testing
 
+Run `poetry install`
+
+To run pytest, you need to have an appropriate postgis database
+If you use docker one option is to run the following:
+
+```bash
+docker run \
+    --rm \
+    -p 49155:5432 \
+    --name=djangostreetmap \
+    -e POSTGRES_PASSWORD=post1234 \
+    postgis/postgis:14-3.2 \
+    -c fsync=off \
+    -c shared_buffers=4096MB
+```
+Run `poetry run pytest`
+
+
 Runserver is "ok" but this recipe will give faster performance for demonstration purposes
+
+
 
 ```bash
 pip install gunicorn
