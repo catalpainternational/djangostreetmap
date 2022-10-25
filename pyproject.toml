@@ -17,7 +17,7 @@ exclude = '''
 
 [tool.poetry]
 name = "djangostreetmap"
-version = "0.2.5"
+version = "0.2.6"
 description = "Deliver OpenstreetMap data in GeoJSON and MVT tile formats"
 authors = ["Joshua Brooks <josh.vdbroek@gmail.com>"]
 license = "LGPL-3.0-or-later"
@@ -32,27 +32,28 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
 osmflex = "^0.2.0"
-pydantic = "~1.9.0"
+pydantic = "^1.10.0"
+typer = "^0.4.1"
 
-[tool.poetry.dev-dependencies]
-Django = "^4.0.1"
-black = "^21.12b0"
-mypy = "^0.910"
-isort = "^5.9.3"
-pre-commit = "^2.15.0"
-django-stubs = "^1.9.0"
-types-psycopg2 = "^2.9.6"
-pytest = "^6.2.5"
-requests = "^2.27.1"
-django-cors-headers = "^3.11.0"
-mypy-extensions = "^0.4.3"
-pytest-django = "^4.5.2"
-psycopg2-binary = "2.8.4"
-gunicorn = "^20.1.0"
-flake8 = "^4.0.1"
-django-extensions = "^3.1.5"
-coverage = "^6.3.2"
-pytest-cov = "^3.0.0"
+[tool.poetry.group.dev.dependencies]
+Django = "*"
+black = "*"
+mypy = "*"
+isort = "*"
+pre-commit = "*"
+django-stubs = "*"
+types-psycopg2 = "*"
+pytest = "*"
+requests = "*"
+django-cors-headers = "*"
+mypy-extensions = "*"
+pytest-django = "*"
+psycopg2-binary = "*"
+gunicorn = "*"
+flake8 = "*"
+django-extensions = "*"
+coverage = "*"
+pytest-cov = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
