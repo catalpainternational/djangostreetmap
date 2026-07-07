@@ -61,7 +61,6 @@ class TileLayerView(View):
         return self.layers
 
     def _generate_tile(self, tile: Tile) -> list[bytes]:
-
         params = asdict(tile)
 
         with connection.cursor() as cursor:
@@ -69,8 +68,6 @@ class TileLayerView(View):
             for query_layer in self.get_layers(tile):
                 params.update(query_layer.query_params)
                 query = query_layer.as_mvt()
-                # Uncomment to see the SQL which is run
-                # logger.info(query.as_string(cursor.cursor))
                 with Timer(name="tile generator", logger=logger.info):
                     tile_response: Sequence | None = None
                     key: str | None = None
@@ -112,8 +109,15 @@ class TileLayerView(View):
 
 
 class BuildingPolygon(TileLayerView):
-    def get_layers(self, tile: Tile):
+    """MVT layer of `osmflex_buildingpolygon` footprints.
 
+    Only emits geometries at ``zoom >= 14`` (buildings are too small to render
+    below that). Each feature carries ``name``, ``osm_id``, ``osm_subtype``,
+    and a ``render_min_height`` computed as ``COALESCE(height, levels*4, 4)``
+    metres — useful for extrusion styling in maplibre-gl.
+    """
+
+    def get_layers(self, tile: Tile):
         if tile.zoom < 14:
             return []
 
@@ -129,8 +133,15 @@ class BuildingPolygon(TileLayerView):
 
 
 class Roads(TileLayerView):
-    def get_layers(self, tile: Tile):
+    """MVT layer of `osmflex_roadline` filtered by highway class per zoom band.
 
+    Each OSM highway class (motorway, primary, secondary, …, path) has a
+    minimum-zoom threshold. The rendered layer at zoom Z includes classes
+    whose threshold is strictly less than Z: at low zooms only motorways and
+    trunks survive; residential/footway/path only appear at zoom 12+.
+    """
+
+    def get_layers(self, tile: Tile):
         road_osm_types = [
             ("trunk", 2),
             ("steps", 12),
@@ -172,6 +183,13 @@ class Roads(TileLayerView):
 
 
 class Hospitals(View):
+    """GeoJSON FeatureCollection of amenity=hospital|clinic points and polygon centroids.
+
+    Non-tile JSON endpoint (returns EPSG:4326). Merges points (`AmenityPoint`)
+    with centroids of hospital polygons (`AmenityPolygon`) so a single symbol
+    layer can render both.
+    """
+
     def get(self, request: HttpRequest, *args, **kwargs):
         AmenityPoint = apps.get_model("osmflex", "AmenityPoint")
         AmenityPolygon = apps.get_model("osmflex", "AmenityPolygon")
@@ -190,6 +208,8 @@ class Hospitals(View):
 
 
 class Aeroways(View):
+    """GeoJSON FeatureCollection of aeroway infrastructure (points + polygon centroids)."""
+
     def get(self, request: HttpRequest, *args, **kwargs):
         point = apps.get_model("osmflex", "InfrastructurePoint")
         polygon = apps.get_model("osmflex", "InfrastructurePolygon")
@@ -208,15 +228,18 @@ class Aeroways(View):
 
 
 class LandLayer(TileLayerView):
+    """MVT layer of the simplified land polygons (single static layer at all zooms)."""
+
     layers = [MvtQuery(table=models.SimplifiedLandPolygon._meta.db_table, layer="land")]
 
 
 class PoiLayer(TileLayerView):
+    """MVT layer of amenity points, labelled as "school" for downstream style rules."""
+
     layers = [
         MvtQuery(
             table=AmenityPoint._meta.db_table,
             attributes=["name"],
-            # filters = sql.SQL("{} = {}").format(sql.Identifier("osm_type"), sql.Literal("school")),
             layer="school",
             pk="osm_id",
         )
@@ -257,15 +280,15 @@ class ModelFeatureCollectionView(View):
 
 
 class MapStyle(View):
-    """
-    Return a simple "mapbox"
-    JSON view
+    """Return a MapLibre / Mapbox style JSON that consumes this app's tile endpoints.
+
+    Wires the `roads`, `land`, `poi`, and `buildings` MVT sources into a single
+    style spec with sensible layer ordering and paint rules. Returned JSON
+    validates against `maplibre.basemodel.Root`.
     """
 
     def get(self, request: HttpRequest, *args, **kwargs):
-
         font = ["Roboto Regular"]
-        # map = Root()
         road_source = sources.Vector(type="vector", tiles=[f"{request.scheme}://{request.get_host()}{reverse('djangostreetmap:roads')}{{z}}/{{x}}/{{y}}.pbf"])
         land_source = sources.Vector(type="vector", tiles=[f"{request.scheme}://{request.get_host()}{reverse('djangostreetmap:land')}{{z}}/{{x}}/{{y}}.pbf"])
         poi_source = sources.Vector(type="vector", tiles=[f"{request.scheme}://{request.get_host()}{reverse('djangostreetmap:poi')}{{z}}/{{x}}/{{y}}.pbf"])
@@ -537,4 +560,4 @@ class MapStyle(View):
             layers=[background, land_layer, *road_casing, *road_lines, *road_labels, *poi_layers, *buildings],
         )
 
-        return HttpResponse(map.json(exclude_unset=True, by_alias=True), content_type="application/json")
+        return HttpResponse(map.model_dump_json(exclude_unset=True, by_alias=True), content_type="application/json")

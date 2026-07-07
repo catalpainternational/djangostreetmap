@@ -1,0 +1,14 @@
+services:
+  postgis:
+    image: postgis/postgis:16-3.4
+    container_name: djsm_example_postgis
+    ports:
+      - "49155:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: post1234
+    tmpfs:
+      - /var/lib/postgresql/data
+    command: >-
+      postgres -c fsync=off -c shared_buffers=1024MB
