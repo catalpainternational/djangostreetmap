@@ -1,46 +1,53 @@
-[![codecov](https://codecov.io/gh/joshbrooks/djangostreetmap/branch/main/graph/badge.svg?token=MXcJUkbOMf)](https://codecov.io/gh/joshbrooks/djangostreetmap)
+[![CI](https://github.com/catalpainternational/djangostreetmap/actions/workflows/ci.yml/badge.svg)](https://github.com/catalpainternational/djangostreetmap/actions/workflows/ci.yml)
 
 # DjangoStreetMap
 
-DjangSstreetMap is a Django application to load OSM data into a postgis database and deliver OSM data as
-MVT tiles.
+DjangoStreetMap is a Django application to load OSM data into a PostGIS database
+and deliver OSM data as MVT tiles.
 
-## Openstreetmap Vector Tiles
+## Stack
+
+- Python 3.11+
+- Django 5.2 LTS
+- Pydantic 2
+- PostGIS 3.4+ (Postgres 16 recommended)
+- Package managed with [uv](https://github.com/astral-sh/uv)
+
+## OpenStreetMap Vector Tiles
 
 > "A vector tile is a lightweight data format for storing geospatial vector data"
 
-For an introduction to MVT (Mapbox Vector Tiles) see the [mapbox docs](https://docs.mapbox.com/help/glossary/vector-tiles/)
-For an introduction to OSM see [openstreetmap.org](https://www.openstreetmap.org/)
+For an introduction to MVT (Mapbox Vector Tiles) see the [mapbox docs](https://docs.mapbox.com/help/glossary/vector-tiles/).
+For an introduction to OSM see [openstreetmap.org](https://www.openstreetmap.org/).
 
-## Purpose of this project
-
-This is a Django application to
+## Purpose
 
 1. Import OSM data as Django models
-2. Expose Django models as MVT (Mapbox Vector Tile) geographic format data
+2. Expose Django models as MVT geographic format data
 
-Tile generation is much faster when geometry is in srid=3857 (or maybe with an index in that SRID?)
+Tile generation is much faster when geometry is in `srid=3857`.
 
 ## Prerequisites
 
-You need the `gdal` libraries installed
+You need the `gdal` libraries installed.
 
 On Ubuntu:
-```
+```bash
 sudo apt install binutils libproj-dev gdal-bin
 ```
 
-Otherwise refer to the Django docs "Installing geospatial libraries"
+Otherwise refer to the Django docs "Installing geospatial libraries".
+
 ## Adding to a Project
 
-If necessary install psycopg2 in your env
+```bash
+uv add djangostreetmap
+```
 
-Extend installed_apps with the following apps:
-
-`pip install osmflex`
-
+Extend `INSTALLED_APPS`:
 ```python
-[
+INSTALLED_APPS = [
+    ...,
     "django.contrib.gis",
     "djangostreetmap",
     "osmflex",
@@ -49,157 +56,119 @@ Extend installed_apps with the following apps:
 
 ## (Recommended) Set your cache
 
-You likely want to set a fast cache for your tiles like Memcached. If this is not found
-the default cache will be used; this can be a bit slower and is very much non persistent
-This assumes you're running memcached (Linux: `apt install memcached`) and installed memcached(`pip install python-memcached`)
+You likely want a fast cache for tiles (e.g. Memcached). If not configured, the
+default cache is used.
 
 ```python
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': '127.0.0.1:11211',
+    "default": {
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+        "LOCATION": "127.0.0.1:11211",
     }
 }
 ```
 
-## Running faster in testing
+## Development
 
-Run `poetry install`
-
-To run pytest, you need to have an appropriate postgis database
-If you use docker one option is to run the following:
+### Set up a PostGIS container
 
 ```bash
-docker run \
-    --rm \
-    -p 49155:5432 \
-    --name=djangostreetmap \
-    -e POSTGRES_PASSWORD=post1234 \
-    postgis/postgis:14-3.2 \
-    -c fsync=off \
-    -c shared_buffers=4096MB
-```
-Run `poetry run pytest`
-
-
-Runserver is "ok" but this recipe will give faster performance for demonstration purposes
-
-
-
-```bash
-pip install gunicorn
-gunicorn -w 8 djangostreetmap.wsgi:application
-```
-
-## Building
-
-poetry version patch
-poetry build
-poetry publish
-
-## Writing Views
-
-To set up a new View, create a subclass of TileLayerView with some `MvtQuery` instances as layers:
-
-```python
-class RoadLayerView(TileLayerView):
-    layers = [
-        MvtQuery(table=OsmHighway._meta.db_table, attributes=["name"], filters=[f"\"highway\"='{road_class}'"], layer=road_class)
-        for road_class in ("primary", "secondary", "tertiary")
-    ]
-```
-
-Append the URL to your urls.py as follows. Note the zoom, x and y are mandatory.
-
-```python
-    path("highways/<int:zoom>/<int:x>/<int:y>.pbf", RoadLayerView.as_view()),
-```
-
-## Running in Development
-
-### Set up postgis
-
-```bash
-docker run --name=osm \
+docker run --rm -d \
+    --name djsm_postgis \
     -e POSTGRES_DB=postgres \
     -e POSTGRES_USER=postgres \
     -e POSTGRES_PASSWORD=post1234 \
     -p 49155:5432 \
-    postgis/postgis:12-3.1
+    postgis/postgis:16-3.4 \
+    -c fsync=off -c shared_buffers=4096MB
 ```
 
-Find your port: if you do not use `49155` as above:
+### Install dependencies
 
-```sh
-(env) josh@m4800:~/github/joshbrooks/djangostreetmap$ docker ps
-CONTAINER ID   IMAGE                            COMMAND                  CREATED          STATUS             PORTS                                         NAMES
-c619232fe38a   postgis/postgis:12-3.1           "docker-entrypoint.s…"   33 seconds ago   Up 32 seconds      0.0.0.0:49155->5432/tcp, :::49155->5432/tcp   osm
-...
+```bash
+uv sync --dev
 ```
 
-OSM is on port 49155
+### Run tests
 
-To apply this to your project:
+```bash
+uv run pytest
+```
+
+### Lint / format / type-check
+
+```bash
+uv run ruff check .
+uv run ruff format .
+uv run mypy djangostreetmap maplibre
+```
+
+### Pre-commit hooks
+
+```bash
+uv run pre-commit install
+uv run pre-commit run --all-files
+```
+
+## Releasing
+
+Releases are automated via GitHub Actions (`.github/workflows/release.yml`) using
+PyPI Trusted Publishing (OIDC). To cut a release:
+
+1. Bump `version` in `pyproject.toml` on `main`; commit and merge.
+2. Tag the merged commit with the same version (no `v` prefix):
+   ```bash
+   git tag 0.3.0 && git push origin 0.3.0
+   ```
+3. The workflow verifies the tag matches `pyproject.toml`, that the commit is on
+   `main`, builds sdist + wheel, publishes to PyPI, and creates a GitHub Release
+   with auto-generated notes.
+
+One-time PyPI setup (maintainer): on the PyPI project page, add a Trusted
+Publisher for the `catalpainternational/djangostreetmap` repo, workflow
+`release.yml`, environment `pypi`.
+
+## Writing Views
+
+Subclass `TileLayerView` with `MvtQuery` layers:
 
 ```python
-  DATABASES = {
-    "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "USER": "postgres",
-        "PASSWORD": "post1233",
-        "HOST": "localhost",
-        "PORT": "49154",
-        "NAME": "postgres",
-    }
-}
+class RoadLayerView(TileLayerView):
+    layers = [
+        MvtQuery(
+            table=OsmHighway._meta.db_table,
+            attributes=["name"],
+            filters=[f"\"highway\"='{road_class}'"],
+            layer=road_class,
+        )
+        for road_class in ("primary", "secondary", "tertiary")
+    ]
 ```
 
-### Fetch your data
+Register the URL:
 
-wget https://download.geofabrik.de/australia-oceania/papua-new-guinea-latest.osm.pbf
+```python
+path("highways/<int:zoom>/<int:x>/<int:y>.pbf", RoadLayerView.as_view()),
+```
 
-or
+## Importing OSM Data
 
+Fetch a `.osm.pbf` extract (e.g. from [Geofabrik](https://download.geofabrik.de/)):
+
+```bash
 wget https://download.geofabrik.de/asia/east-timor-latest.osm.pbf
-
-### Installing osm2psql
-
-To run the management command below you'll need an `osm2pgsql` version of around 1.3 or greater. This is not available in the ubuntu package manager (yet)...
-
-### Import Data
-
-The "osmflex" app has two management commands to run which will populate osmflex models
-
-```sh
-./manage.py run_osm2pgsql /media/josh/blackgate/osm/asia/east-timor-latest.osm.pbf
 ```
 
-```sh
+You need `osm2pgsql` >= 1.3. The `osmflex` app provides two management commands
+to populate the models:
+
+```bash
+./manage.py run_osm2pgsql /path/to/east-timor-latest.osm.pbf
 ./manage.py import_from_pgosmflex
 ```
 
-### Exploring data
+## Exploring Data
 
-See the Django admin for osmflex:
-
-http://localhost:8000/admin/osmflex
-
-psql --host localhost --username postgres --port 49159
-
-### Qgis
-
-- Add a new Postgres Connection with the following settings:
-
-Name: DjangoStreetMap
-Host: localhost
-Port: 49155
-Database: postgres
-
-Authentication: Basic
-postgres / post1233
-
-## Development
-
-Code is blacked, flaked, isorted and mypy'd.
-
-`pip install pre-commit`
+- Django admin: <http://localhost:8000/admin/osmflex>
+- psql: `psql --host localhost --username postgres --port 49155`
+- QGIS: add a Postgres connection to `localhost:49155`, database `postgres`.

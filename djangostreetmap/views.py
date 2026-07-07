@@ -1,7 +1,8 @@
 import hashlib
 import logging
+from collections.abc import Sequence
 from dataclasses import asdict
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any
 
 from django.apps import apps
 from django.contrib.gis.db.models.functions import Centroid, Transform
@@ -49,36 +50,36 @@ class TileLayerView(View):
     >>> path("mylayer", MyTileLayerView.as_view(), name="mylayer"),
     """
 
-    layers: List[MvtQuery] = []
-    tilecache: Optional[TileCache] = None
+    layers: list[MvtQuery] = []
+    tilecache: TileCache | None = None
 
-    def get_layers(self, tile: Tile) -> List[MvtQuery]:
+    def get_layers(self, tile: Tile) -> list[MvtQuery]:
         """
         Override for dynamically determining tile content
         based on tile properties (most likely zoom)
         """
         return self.layers
 
-    def _generate_tile(self, tile: Tile) -> List[bytes]:
+    def _generate_tile(self, tile: Tile) -> list[bytes]:
 
         params = asdict(tile)
 
         with connection.cursor() as cursor:
-            tiles: List[bytes] = []
+            tiles: list[bytes] = []
             for query_layer in self.get_layers(tile):
                 params.update(query_layer.query_params)
                 query = query_layer.as_mvt()
                 # Uncomment to see the SQL which is run
                 # logger.info(query.as_string(cursor.cursor))
                 with Timer(name="tile generator", logger=logger.info):
-                    tile_response: Optional[Sequence] = None
-                    key: Optional[str] = None
+                    tile_response: Sequence | None = None
+                    key: str | None = None
 
                     if self.tilecache:
                         key = hashlib.sha256(f"{query}, {params}".encode()).hexdigest()[:8]
 
                     if self.tilecache and key:
-                        content_bytes: Optional[bytes] = self.tilecache.get(key)
+                        content_bytes: bytes | None = self.tilecache.get(key)
                         if content_bytes is not None:
                             logger.info("Cached tile returning")
                             tiles.append(content_bytes)
@@ -150,7 +151,7 @@ class Roads(TileLayerView):
             ("service", 12),
             ("unclassified", 12),
             ("path", 12),
-        ]  # type: List[Tuple[str, int]]
+        ]  # type: list[tuple[str, int]]
 
         # Determine which road types to include in the layer
 
@@ -232,9 +233,9 @@ class ModelFeatureCollectionView(View):
 
     def geojson(
         self,
-        model: Union[OsmPoint, OsmLine, OsmPolygon],
-        filter_kwargs: Dict[str, Any],
-        intersect: Type[Model],  # Note that we make some assumptions about "intersect" model here, see "Intersect" class
+        model: OsmPoint | OsmLine | OsmPolygon,
+        filter_kwargs: dict[str, Any],
+        intersect: type[Model],  # Note that we make some assumptions about "intersect" model here, see "Intersect" class
         **kwargs,
     ):
         """
