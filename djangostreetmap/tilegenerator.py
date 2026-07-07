@@ -1,7 +1,8 @@
 import re
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from itertools import count
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any
 
 from django.contrib.gis.db.models import GeometryField
 from psycopg2 import sql
@@ -45,17 +46,17 @@ class MvtQuery:
     at https://postgis.net/docs/manual-dev/ST_AsMVT.html
     """
 
-    table: Union[str, sql.Composed, sql.SQL, sql.Identifier]
+    table: str | sql.Composed | sql.SQL | sql.Identifier
     # cte's are used to add additional WITH statements. This allows more flexibility in
     # adding Django querysets as MVT layers.
-    ctes: Iterable[Tuple[sql.Identifier, Any]] = ()
+    ctes: Iterable[tuple[sql.Identifier, Any]] = ()
     # When adding Django querysets with parameters, eg when filtering, there are
     # positional placeholders. These must be converted to named placeholders and included
     # in the `query_params` dict below for the final SQL statement to be correctly
     # handled.
-    query_params: Dict[str, Any] = field(default_factory=dict)  # These are args to pass to any internal queryset we use where `table` is a Django queryset
-    attributes: List[str] = field(default_factory=list)
-    calculated_attributes: Dict[str, Union[sql.Composed, sql.SQL]] = field(default_factory=dict)
+    query_params: dict[str, Any] = field(default_factory=dict)  # These are args to pass to any internal queryset we use where `table` is a Django queryset
+    attributes: list[str] = field(default_factory=list)
+    calculated_attributes: dict[str, sql.Composed | sql.SQL] = field(default_factory=dict)
     filters: Sequence[sql.Composable] = field(default_factory=list)
     transform: bool = False  # Set to True if source srid is not 3857, but beware performance
     field: str = "geom"
@@ -69,7 +70,7 @@ class MvtQuery:
         """
         if not self.attributes and not self.calculated_attributes:
             return sql.SQL("").format()
-        params = None
+        params: sql.Composed | sql.Literal | None = None
         for a in self.attributes:
             if not params:
                 params = sql.Literal(a)
@@ -77,11 +78,11 @@ class MvtQuery:
                 params += sql.Literal(a)  # Name of the key is the same as the field
             params += sql.Identifier(a)  # The field to use as the value for the JSON
 
-        for field, expression in self.calculated_attributes.items():
+        for field_name, expression in self.calculated_attributes.items():
             if not params:
-                params = sql.Literal(field)
+                params = sql.Literal(field_name)
             else:
-                params += sql.Literal(field)  # Name of the key is the same as the field
+                params += sql.Literal(field_name)  # Name of the key is the same as the field
             assert params
             params += expression  # The expression to use as the value for the JSON
 
@@ -159,13 +160,12 @@ class MvtQuery:
 
     def as_mvt(self) -> sql.Composed:
         outer_query = self.get_cte_sql()
-        inner_query = sql.SQL(" SELECT ST_AsMVT( {alias}.*, {layer}, %(extent)s, 'geom', {pk}) FROM {alias}" "")
+        inner_query = sql.SQL(" SELECT ST_AsMVT( {alias}.*, {layer}, %(extent)s, 'geom', {pk}) FROM {alias}")
         parameters = dict(alias=self.alias, layer=sql.Literal(self.layer), inner_query=self.as_mvtgeom, pk=sql.Literal(self.pk))
         return (outer_query + inner_query.format(**parameters)).join(" ")
 
     @classmethod
     def from_model(cls, model, *args, **kwargs) -> "MvtQuery":
-
         field = kwargs.pop("field", get_geom_field(model))
         attributes = kwargs.pop("attributes", get_model_attributes(model))
         pk = kwargs.get("pk", get_model_pk_field(model))
@@ -174,7 +174,7 @@ class MvtQuery:
 
     @classmethod
     def from_queryset(
-        cls, queryset, field: str = "geom", attributes: Optional[List[str]] = None, pk: Optional[str] = None, transform: Optional[bool] = False, *args, **kwargs
+        cls, queryset, field: str = "geom", attributes: list[str] | None = None, pk: str | None = None, transform: bool | None = False, *args, **kwargs
     ) -> "MvtQuery":
         """
         Takes as input a Django queryset
@@ -199,6 +199,9 @@ class MvtQuery:
         if not attributes:
             attributes = [pk]
 
+        if transform is None:
+            transform = False
+
         instance = cls(
             table=cte_name,
             ctes=((cte_name, sql.SQL(django_sql)),),
@@ -218,23 +221,23 @@ def get_geom_field(model) -> str:
     Returns the first field likely to be a geometry field
     from a model
     """
-    fields = model._meta.fields  # type: List
+    fields = model._meta.fields  # type: list
     for field_ in fields:
         if isinstance(field_, GeometryField):
             return field_.db_column or field_.attname
     raise KeyError(f"No geometry field could be identified for {model}")
 
 
-def get_model_attributes(model) -> List[str]:
+def get_model_attributes(model) -> list[str]:
     """
     Returns the columns of a model
     """
-    fields = model._meta.fields  # type: List
+    fields = model._meta.fields  # type: list
     return [f.db_column or f.attname for f in fields if not isinstance(f, GeometryField)]
 
 
 def get_model_pk_field(model) -> str:
-    fields = model._meta.fields  # type: List
+    fields = model._meta.fields  # type: list
     for pk_field_candidate in fields:
         if pk_field_candidate.primary_key:
             return pk_field_candidate.db_column or pk_field_candidate.attname

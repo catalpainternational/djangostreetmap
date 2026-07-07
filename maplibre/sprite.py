@@ -1,5 +1,3 @@
-from typing import Optional, Tuple
-
 from pydantic import BaseModel, Field
 
 """
@@ -16,10 +14,12 @@ class Sprite(BaseModel):
     x: int = 0
     y: int = 0
     pixelRatio: int = 1
-    content: Optional[Tuple[float, float, float, float]] = Field(
-        """An array of four numbers, with the first two specifying the left, top corner, and the last two specifying the right, bottom corner. If present, and if the icon uses icon-text-fit, the symbol's text will be fit inside the content box."""
+    content: tuple[float, float, float, float] | None = Field(
+        None,
+        description="An array of four numbers, with the first two specifying the left, top corner, and the last two specifying the right, bottom corner. If present, and if the icon uses icon-text-fit, the symbol's text will be fit inside the content box.",
     )
-    stretchX: Optional[Tuple[float, float]] = Field(
-        description="An array of two-element arrays, consisting of two numbers that represent the from position and the to position of areas that can be stretched."
+    stretchX: tuple[float, float] | None = Field(
+        None,
+        description="An array of two-element arrays, consisting of two numbers that represent the from position and the to position of areas that can be stretched.",
     )
-    stretchY: Optional[Tuple[float, float]]
+    stretchY: tuple[float, float] | None = None

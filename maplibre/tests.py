@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 from unittest import TestCase
 
 from maplibre import layer
@@ -9,7 +9,6 @@ from . import sources
 
 class LayersTestCase(TestCase):
     def test_layer(self):
-
         trunk_roads = layer.Layer(
             type="line",
             id="trunk_roads",
@@ -19,10 +18,9 @@ class LayersTestCase(TestCase):
             paint={"line-color": "#e9ac77", "line-width": {"base": 1.2, "stops": [[12, 1], [13, 3], [14, 4], [20, 15]]}},
         )
 
-        trunk_roads.json()
+        trunk_roads.model_dump_json()
 
     def test_reverse_layer(self):
-
         layer_detail = {
             "id": "landuse_residential",
             "type": "fill",
@@ -39,36 +37,35 @@ class LayersTestCase(TestCase):
 
 class SourcesTestCase(TestCase):
     def test_vector_tiles(self):
-        sources.Vector(**{"tiles": ["http://a.example.com/tiles/{z}/{x}/{y}.pbf", "http://b.example.com/tiles/{z}/{x}/{y}.pbf"], "maxzoom": 14}).json()
+        sources.Vector(**{"tiles": ["http://a.example.com/tiles/{z}/{x}/{y}.pbf", "http://b.example.com/tiles/{z}/{x}/{y}.pbf"], "maxzoom": 14}).model_dump_json()
 
     def test_vector_tiles_json(self):
-        sources.Vector(url="http://api.example.com/tilejson.json").json()
+        sources.Vector(url="http://api.example.com/tilejson.json").model_dump_json()
 
     def test_vector_mapbox(self):
-        sources.Vector(url="mapbox://mapbox.mapbox-streets-v6").json()
+        sources.Vector(url="mapbox://mapbox.mapbox-streets-v6").model_dump_json()
 
     def test_vector_mapboxsatellite(self):
-        sources.Vector(url="mapbox://mapbox.satellite", tileSize=256).json()
+        sources.Vector(url="mapbox://mapbox.satellite", tileSize=256).model_dump_json()
 
     def test_raster(self):
         sources.Raster(
             tiles=["http://a.example.com/wms?bbox={bbox-epsg-3857}&format=image/png&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&width=256&height=256&layers=example"],
             tileSize=256,
-        ).json()
+        ).model_dump_json()
 
     def test_rasterdem(self):
-        sources.RasterDem(url="mapbox://mapbox.terrain-rgb").json()
+        sources.RasterDem(url="mapbox://mapbox.terrain-rgb").model_dump_json()
 
     def test_geojson(self):
-
         sources.GeoJson(
             data={"type": "Feature", "geometry": {"type": "Point", "coordinates": [-77.0323, 38.9131]}, "properties": {"title": "Mapbox DC", "marker-symbol": "monument"}}
-        ).json()
+        ).model_dump_json()
 
     def test_image(self):
         sources.Image(
             url="https://maplibre.org/maplibre-gl-js-docs/assets/radar.gif", coordinates=[[-80.425, 46.437], [-71.516, 46.437], [-71.516, 37.936], [-80.425, 37.936]]
-        ).json()
+        ).model_dump_json()
 
     def test_video(self):
         sources.Video(
@@ -79,7 +76,7 @@ class SourcesTestCase(TestCase):
                 [-122.51309394836426, 37.563391708549425],
                 [-122.51423120498657, 37.56161849366671],
             ],
-        ).json()
+        ).model_dump_json()
 
 
 class DemoTilesTest(TestCase):
@@ -90,11 +87,10 @@ class DemoTilesTest(TestCase):
     """
 
     style_text = ""
-    style: Dict[str, Any] = {}
+    style: dict[str, Any] = {}
 
     @classmethod
     def setUpClass(cls) -> None:
-
         import json
         from importlib import resources
 
@@ -103,17 +99,12 @@ class DemoTilesTest(TestCase):
         return super().setUpClass()
 
     def test_base(self):
-        # Try the entire test file
-        ...
         from .basemodel import Root
 
-        root_two = Root.parse_obj(self.style)
+        root_two = Root.model_validate(self.style)
         print(root_two)
 
     def test_demo_backgroundlayer(self):
-
-        # Read the json
-        # Try layers...
         layer.Layer(**self.style.get("layers")[0])
 
 
@@ -123,11 +114,10 @@ class OsmLibertyTest(TestCase):
     """
 
     style_text = ""
-    style: Dict[str, Any] = {}
+    style: dict[str, Any] = {}
 
     @classmethod
     def setUpClass(cls) -> None:
-
         import json
         from importlib import resources
 
@@ -136,15 +126,10 @@ class OsmLibertyTest(TestCase):
         return super().setUpClass()
 
     def test_base(self):
-        # Try the entire test file
-        ...
         from .basemodel import Root
 
-        root_two = Root.parse_obj(self.style)
+        root_two = Root.model_validate(self.style)
         print(root_two)
 
     def test_demo_backgroundlayer(self):
-
-        # Read the json
-        # Try layers...
         layer.Layer(**self.style.get("layers")[0])

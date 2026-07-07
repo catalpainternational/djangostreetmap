@@ -1,13 +1,14 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Protocol, Sequence, Tuple, Union
+from typing import Protocol
 
 from django.db import models
 
-P = Tuple[float, float]
-L = Tuple[P]
-ML = Tuple[L]
+P = tuple[float, float]
+L = tuple[P]
+ML = tuple[L]
 
-AnyGeom = Union[P, L, ML]
+AnyGeom = P | L | ML
 
 
 @dataclass
@@ -20,20 +21,20 @@ class GeoJsonGeometry:
 class GeoJsonFeature:
     type: str  # "Feature"
     geometry: GeoJsonGeometry
-    properties: Dict[str, str]
+    properties: dict[str, str]
 
 
 @dataclass
 class GeoJsonFeatureCollection:
     type: str  # "FeatureCollection"
-    features: List[GeoJsonFeature]
+    features: list[GeoJsonFeature]
 
 
 @dataclass
 class GeoJsonSerializer:
     queryset: models.QuerySet
     geom_field: str = "geom"
-    properties: Optional[Sequence[str]] = None
+    properties: Sequence[str] | None = None
 
     def _to_feature(self, feature):
         geom = getattr(feature, self.geom_field)

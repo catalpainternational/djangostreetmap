@@ -5,7 +5,6 @@ RGB, RGBA, HSL, and HSLA. Predefined HTML colors names
  like yellow and blue, are also permitted.
 """
 
-
 "#ff0"
 "#ffff00"
 "rgb(255, 255, 0)"
