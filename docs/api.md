@@ -60,20 +60,23 @@ Not re-exported at package level (import from `djangostreetmap.views`).
 from maplibre import (
     Root, Layer, Layout, Paint, BackgroundPaint,
     Vector, Raster, RasterDem, GeoJson, Image, Video, Source, AnySource,
-    Light, Anchor, Sprite, Transition,
+    Light, Anchor, Sky, Terrain, Projection, Sprite, Transition,
 )
 ```
 
-Pydantic v2 models for the MapLibre / Mapbox style spec. Every field carries a
-`description=...` matching the upstream spec.
+Pydantic v2 models tracking the current MapLibre style spec (v25.x). Every
+field carries a `description=...` matching the upstream spec.
 
 | Name                                        | Purpose                                                       |
 | ------------------------------------------- | ------------------------------------------------------------- |
-| `Root`                                      | Top-level style: `version`, `sources`, `layers`, ...           |
-| `Layer`, `Layout`, `Paint`, `BackgroundPaint` | Layer + rendering rules.                                     |
-| `Vector`, `Raster`, `RasterDem`, `GeoJson`, `Image`, `Video` | Source types, discriminated on `type`.  |
+| `Root`                                      | Top-level style: `version`, `sources`, `layers`, plus optional `sky`, `terrain`, `projection`, `transition`, `state`, `roll`, `centerAltitude`. |
+| `Layer`, `Layout`, `Paint`, `BackgroundPaint` | Layer + rendering rules. Layer `type` includes `color-relief` (v24.x+). |
+| `Vector`, `Raster`, `RasterDem`, `GeoJson`, `Image`, `Video` | Source types, discriminated on `type`. `Vector` supports the `encoding` field (mvt/mlt); `RasterDem` supports custom encoding factors (`redFactor`/`greenFactor`/`blueFactor`/`baseShift`). |
 | `Source`, `AnySource`                       | Base + tagged union of all source types.                       |
 | `Light`, `Anchor`                           | 3D lighting spec.                                              |
+| `Sky`                                       | Sky, atmosphere, horizon, and fog configuration.               |
+| `Terrain`                                   | 3D terrain from a `raster-dem` source (`source`, `exaggeration`). |
+| `Projection`                                | Map projection (`mercator`, `vertical-perspective`, or an expression). |
 | `Sprite`, `Transition`                      | Sprite atlas + transition timing.                              |
 
 ### Parsing / dumping
