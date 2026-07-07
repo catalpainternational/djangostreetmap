@@ -49,15 +49,12 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    # "pyinstrument.middleware.ProfilerMiddleware",  # Uncomment to profile all requests
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
-PYINSTRUMENT_PROFILE_DIR = "profiles"
 
 ROOT_URLCONF = "tests.urls"
 
@@ -79,22 +76,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "djangostreetmap.wsgi.application"
 
-
-# Database
-# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-
-
-# Temporary:
-"""
-docker run \
-    --rm \
-    -p 49155:5432 \
-    --name=djangostreetmap \
-    -e POSTGRES_PASSWORD=post1234 \
-    postgis/postgis:14-3.2 \
-    -c fsync=off \
-    -c shared_buffers=4096MB
-"""
+# For local development, start PostGIS via:
+#   docker run --rm -d --name djsm_postgis \
+#     -e POSTGRES_DB=postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=post1234 \
+#     -p 49155:5432 postgis/postgis:16-3.4 -c fsync=off
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",

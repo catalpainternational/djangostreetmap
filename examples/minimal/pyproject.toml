@@ -1,0 +1,11 @@
+[project]
+name = "djangostreetmap-minimal"
+version = "0.0.0"
+description = "Runnable minimal example for djangostreetmap"
+requires-python = ">=3.11,<3.15"
+dependencies = [
+    "Django>=5.2,<6.0",
+    "djangostreetmap>=0.3.2",
+    "osmflex>=0.3.1",
+    "psycopg2-binary>=2.9",
+]

@@ -13,6 +13,14 @@ and deliver OSM data as MVT tiles.
 - PostGIS 3.4+ (Postgres 16 recommended)
 - Package managed with [uv](https://github.com/astral-sh/uv)
 
+## Docs
+
+- [`docs/architecture.md`](./docs/architecture.md) — tile pipeline, MvtQuery
+  variants, SRID choices, cache protocol, how to write a new tile view.
+- [`docs/api.md`](./docs/api.md) — cheatsheet of every public symbol.
+- [`examples/minimal/`](./examples/minimal/) — runnable standalone project:
+  `make db-up install migrate import runserver` → tiles at `:8000/tiles/...`.
+
 ## OpenStreetMap Vector Tiles
 
 > "A vector tile is a lightweight data format for storing geospatial vector data"

@@ -83,7 +83,7 @@ jobs:
             sleep 2
           done
       - name: Run tests
-        run: uv run pytest --cov --cov-report=xml
+        run: uv run pytest --cov --cov-report=xml --cov-report=term-missing --cov-fail-under=60
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:

@@ -6,3 +6,4 @@ notebooks/.ipynb_checkpoints/
 .pat
 dist/
 coverage.xml
+.coverage

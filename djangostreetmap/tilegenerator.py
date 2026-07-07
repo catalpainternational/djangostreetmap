@@ -137,15 +137,15 @@ class MvtQuery:
 
     @property
     def _feature_query(self) -> sql.Composable:
-        """
-        Return the sql required for the geometry query
-        and other specified filters
+        """SQL for the bounding-box filter that selects features overlapping the tile.
+
+        Uses ``ST_TileEnvelope(z, x, y, margin => buffer/extent)`` (PostGIS 3.1+)
+        so features straddling the tile boundary are still fetched — required
+        for MVT clipping without geometry snapping at edges.
         """
         return sql.SQL("""{g} && {m} {where}""").format(
             g=self.transformed_geom,
-            m=Tile.tile_envelope(),
-            # TODO: Re enable the margin when postgis >= 3.1
-            # m=Tile.tile_envelope_margin(),
+            m=Tile.tile_envelope_margin(),
             where=self.where,
         )
 

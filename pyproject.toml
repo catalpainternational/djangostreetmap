@@ -1,6 +1,6 @@
 [project]
 name = "djangostreetmap"
-version = "0.3.1"
+version = "0.3.2"
 description = "Deliver OpenStreetMap data in GeoJSON and MVT tile formats"
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
@@ -44,7 +44,7 @@ packages = ["djangostreetmap", "maplibre"]
 [tool.ruff]
 line-length = 180
 target-version = "py311"
-exclude = ["migrations", ".venv", "env", "env3.8", "typings"]
+exclude = ["migrations", ".venv", "env", "env3.8", "typings", "examples"]
 
 [tool.ruff.lint]
 select = [
@@ -94,5 +94,11 @@ source = ["djangostreetmap", "maplibre"]
 omit = [
     "*/migrations/*",
     "*/tests.py",
+    "*/test_*.py",
     "tests/*",
 ]
+
+[tool.coverage.report]
+skip_covered = false
+show_missing = true
+fail_under = 60
