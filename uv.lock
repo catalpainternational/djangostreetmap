@@ -329,7 +329,7 @@ wheels = [
 
 [[package]]
 name = "djangostreetmap"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "django" },
@@ -356,7 +356,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "django", specifier = ">=5.2,<6.0" },
-    { name = "osmflex", specifier = ">=0.2.3" },
+    { name = "osmflex", specifier = ">=0.3" },
     { name = "pydantic", specifier = ">=2,<3" },
 ]
 
@@ -558,11 +558,14 @@ wheels = [
 
 [[package]]
 name = "osmflex"
-version = "0.2.3"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4a/e5/c35b11a5cdbe795c9c73a7110c226ee869094d331fe7ba0ca1a65d148025/osmflex-0.2.3.tar.gz", hash = "sha256:8ebfbd85234655db638dbeb74f494e3a5013ce2c8ea65875605608f43b6f5dea", size = 31913, upload-time = "2022-05-05T03:13:06.313Z" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a0/2d/5356866de2b01bd7e304c19fcad6bbb670f86ff1a5fcb246eed608a263a4/osmflex-0.3.0.tar.gz", hash = "sha256:8c0392da7ba72fe868c068303925201beb25e2aff97b3cc0f2e2613bfb3caa12", size = 84077, upload-time = "2026-07-07T07:22:24.858Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a2/0c/331de51a904e476ea5b041c00d8b0d62f9df7cd2f49f67a6f8ea0d2711c3/osmflex-0.2.3-py3-none-any.whl", hash = "sha256:787858a9402713f4f6524a1bd85b7671d1ac6cfb1eeb5ff12822a9bffb44c45c", size = 46433, upload-time = "2022-05-05T03:13:04.208Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/35/a03e3f05c668af38ccf6b9eb5528e6ab89c50324fb8b8ba2e3450e04002a/osmflex-0.3.0-py3-none-any.whl", hash = "sha256:3cdb27ceec90df73e3a19512e25c06844d8f04c8c97f4e3e04c75a7745b13bdc", size = 48761, upload-time = "2026-07-07T07:22:23.718Z" },
 ]
 
 [[package]]
