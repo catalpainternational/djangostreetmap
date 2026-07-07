@@ -27,6 +27,7 @@ class TypeEnum(str, Enum):
     fillExtrusion = "fill-extrusion"
     raster = "raster"
     hillshade = "hillshade"
+    colorRelief = "color-relief"
     background = "background"
 
 
@@ -53,7 +54,7 @@ class Layer(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    type: Literal["fill", "line", "symbol", "circle", "heatmap", "fill-extrusion", "raster", "hillshade", "background"]
+    type: Literal["fill", "line", "symbol", "circle", "heatmap", "fill-extrusion", "raster", "hillshade", "color-relief", "background"]
     filter: Expression | None = Field(
         None,
         description="""A expression specifying conditions on source features. Only features that match the filter are displayed. Zoom expressions in filters are only evaluated at integer zoom levels. The feature-state expression is not supported in filter expressions.""",

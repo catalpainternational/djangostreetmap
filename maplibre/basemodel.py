@@ -1,59 +1,84 @@
+"""MapLibre style-spec `Root` object.
+
+Mirrors https://maplibre.org/maplibre-style-spec/root/ .
+"""
+
 from typing import Any
 
-from pydantic import AnyUrl, BaseModel, Field, ValidationInfo, field_validator
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from .layer import Layer
 from .light import Light
+from .projection import Projection
+from .sky import Sky
 from .sources import AnySource
+from .terrain import Terrain
+from .transition import Transition
 
 
 class Root(BaseModel):
-    id: str | None = None
-    bearing: int | float | None = Field(
+    """Top-level MapLibre style. `sources` and `layers` are the required fields."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    version: int = Field(8, description="Style specification version number (must be 8).")
+    name: str | None = Field(None, description="A human-readable name for the style.")
+    metadata: dict[str, Any] | None = Field(
         None,
-        description="""Default bearing, in degrees. The bearing is the compass direction that is "up"; for example, a bearing of 90° orients the map so that east is up. This value will be used only if the map has not been positioned by other means (e.g. map options or user interaction).""",
+        description="Arbitrary properties useful to track with the stylesheet; do not influence rendering. Properties should be prefixed to avoid collisions, like 'mapbox:'.",
     )
     center: tuple[float, float] | None = Field(
         None,
-        description="""Default map center in longitude and latitude. The style center will be used only if the map has not been positioned by other means (e.g. map options or user interaction).""",
+        description="Default map center in [longitude, latitude]. Used only if the map is not otherwise positioned.",
+    )
+    center_altitude: float | None = Field(
+        None,
+        alias="centerAltitude",
+        description="Default altitude of the map center in meters (v5.0.0+).",
+    )
+    zoom: float | None = Field(None, description="Default zoom level.")
+    bearing: int | float | None = Field(
+        None,
+        description="Default bearing in degrees. 90° puts east up. Used only if the map is not otherwise positioned.",
+    )
+    pitch: int | float | None = Field(
+        None,
+        description="Default pitch in degrees. 0 = looking straight down; higher values tilt toward the horizon.",
+    )
+    roll: int | float | None = Field(
+        None,
+        description="Default roll in degrees (v5.0.0+).",
+    )
+    light: Light | None = Field(None, description="The global light source.")
+    sky: Sky | None = Field(None, description="Sky, atmosphere, horizon, and fog configuration.")
+    projection: Projection | None = Field(None, description="Map projection.")
+    terrain: Terrain | None = Field(None, description="3D terrain configuration referencing a raster-dem source.")
+    sources: dict[str, AnySource] = Field(description="Data source specifications.")
+    sprite: AnyUrl | list[dict[str, Any]] | None = Field(
+        None,
+        description=(
+            "Sprite atlas: either a base URL (extensions .png/.json/@2x.png appended automatically) or an array of "
+            "sprite objects for multi-sprite support. Required if any layer uses a *-pattern or icon-image property."
+        ),
     )
     glyphs: AnyUrl | None = Field(
         None,
-        description="""A URL template for loading signed-distance-field glyph sets in PBF format. The URL must include {fontstack} and {range} tokens. This property is required if any layer uses the text-field layout property. The URL must be absolute, containing the scheme, authority and path components.""",
+        description="URL template for signed-distance-field glyph PBFs (must include {fontstack} and {range}).",
     )
-    light: Light | None = Field(None, description="""The global light source.""")
-    metadata: dict[str, Any] | None = Field(
+    transition: Transition | None = Field(
         None,
-        description="""Arbitrary properties useful to track with the stylesheet, but do not influence rendering. Properties should be prefixed to avoid collisions, like 'mapbox:'.""",
+        description="Global transition defaults for animated property changes.",
     )
-    name: str | None = Field(None, description="""A human-readable name for the style.""")
-    pitch: int | float | None = Field(
+    state: dict[str, Any] | None = Field(
         None,
-        description="""Default pitch, in degrees. Zero is perpendicular to the surface, for a look straight down at the map, while a greater value like 60 looks ahead towards the horizon. The style pitch will be used only if the map has not been positioned by other means (e.g. map options or user interaction).""",
+        description="Style state variables consumable by global-state expressions (v5.6.0+).",
     )
-    sources: dict[str, AnySource] = Field(description="""Data source specifications.""")
-    layers: list[Layer]
-    sprite: AnyUrl | None = Field(
-        None,
-        description="""A base URL for retrieving the sprite image and metadata. The extensions .png, .json and scale factor @2x.png will be automatically appended. This property is required if any layer uses the background-pattern, fill-pattern, line-pattern, fill-extrusion-pattern, or icon-image properties. The URL must be absolute, containing the scheme, authority and path components.""",
-    )
-    transition: str | None = Field(
-        None,
-        description="""A global transition definition to use as a default across properties, to be used for timing transitions between one value and the next when no property-specific transition is set. Collision-based symbol fading is controlled independently of the style's transition property.""",
-    )
-    version: int = Field(8, description="""Style specification version number.""")
-
-    zoom: float | None = Field(
-        None,
-        description="""Default zoom level. The style zoom will be used only if the map has not been positioned by other means (e.g. map options or user interaction).""",
-    )
+    layers: list[Layer] = Field(description="Ordered list of style layers (bottom-to-top).")
 
     @field_validator("layers")
     @classmethod
     def layer_source_is_in_sources(cls, layers: list[Layer], info: ValidationInfo):
-        """
-        Ensure that the reference exists in the `sources` map
-        """
+        """Ensure every non-background layer's `source` references a declared source."""
         sources: dict[str, AnySource] | None = info.data.get("sources")
         if sources is None:
             # sources failed to validate; skip cross-field check

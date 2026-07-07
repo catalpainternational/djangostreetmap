@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Annotated, Literal
 
-from pydantic import AnyUrl, BaseModel, Field, HttpUrl
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, HttpUrl
 
 from djangostreetmap.annotations import GeoJsonFeature, GeoJsonFeatureCollection
 
@@ -30,11 +30,23 @@ class SchemeEnum(str, Enum):
 
 
 class EncodingEnum(str, Enum):
+    """Height-encoding scheme for `raster-dem` tiles."""
+
     terrarium = "terrarium"
     mapbox = "mapbox"
+    custom = "custom"
+
+
+class VectorEncodingEnum(str, Enum):
+    """Tile encoding for `vector` sources."""
+
+    mvt = "mvt"
+    mlt = "mlt"
 
 
 class Source(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     attribution: str | None = Field(None, description="Contains an attribution to be displayed when the map is shown to a user.")
     bounds: list[float] = Field(
         default_factory=lambda: [-180, -85.051129, 180, 85.051129],
@@ -74,6 +86,7 @@ class Vector(Source):
     )
     url: AnyUrl | None = Field(None, description="A URL to a TileJSON resource.")
     scheme: SchemeEnum = Field(SchemeEnum.xyz, description="Influences the y direction of the tile coordinates. The global-mercator (aka Spherical Mercator) profile is assumed.")
+    encoding: VectorEncodingEnum | None = Field(None, description="Tile encoding: 'mvt' (default) or 'mlt'.")
 
 
 class Raster(Source):
@@ -87,7 +100,11 @@ class RasterDem(Source):
     """
 
     type: Literal["raster-dem"] = "raster-dem"
-    encoding: EncodingEnum = Field(EncodingEnum.mapbox, description="The encoding used by this source. Mapbox Terrain RGB is used by default")
+    encoding: EncodingEnum = Field(EncodingEnum.mapbox, description="Height encoding: mapbox (default), terrarium, or custom.")
+    red_factor: float | None = Field(None, alias="redFactor", description="Custom encoding: multiplier for the red channel when computing height.")
+    green_factor: float | None = Field(None, alias="greenFactor", description="Custom encoding: multiplier for the green channel when computing height.")
+    blue_factor: float | None = Field(None, alias="blueFactor", description="Custom encoding: multiplier for the blue channel when computing height.")
+    base_shift: float | None = Field(None, alias="baseShift", description="Custom encoding: additive height offset in metres.")
     url: AnyUrl | None = Field(None, description="A URL to a TileJSON resource.")
 
 
